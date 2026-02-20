@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
+    "prestart": "node scripts/seedUser.js",
     "start": "node src/server.js",
     "seed": "node scripts/seedUser.js",
     "test:db": "node scripts/testConnection.js",

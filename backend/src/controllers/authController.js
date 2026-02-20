@@ -62,6 +62,11 @@ exports.login = async (req, res, next) => {
       console.log('[LOGIN] User not found:', emailLower);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    if (user.isActive === false) {
+      console.log('[LOGIN] User inactive:', emailLower);
+      return res.status(401).json({ message: 'User account is inactive' });
+    }
     
     console.log('[LOGIN] User found:', { email: user.email, name: user.name });
     

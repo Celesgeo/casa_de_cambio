@@ -26,7 +26,6 @@ async function seed() {
     const exists = await User.findOne({ email: DEFAULT_EMAIL });
     if (exists) {
       console.log('User already exists:', DEFAULT_EMAIL);
-      process.exit(0);
       return;
     }
     const hashed = await bcrypt.hash(DEFAULT_PASSWORD, 10);
@@ -44,7 +43,7 @@ async function seed() {
     }
     process.exit(1);
   } finally {
-    await mongoose.disconnect();
+    await mongoose.disconnect().catch(() => {});
   }
 }
 
