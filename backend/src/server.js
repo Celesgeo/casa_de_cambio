@@ -10,8 +10,10 @@ const startServer = async () => {
 
   const server = http.createServer(app);
 
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend API running on port ${PORT}`);
+    console.log(`  Local:   http://localhost:${PORT}/api`);
+    console.log(`  Network: http://<tu-ip>:${PORT}/api (para app móvil)`);
   });
 };
 

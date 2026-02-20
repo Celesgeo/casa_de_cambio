@@ -109,28 +109,56 @@ export const OperationsPage: React.FC = () => {
     },
     {
       field: 'amountFrom',
-      headerName: 'Amount',
-      flex: 1,
-      minWidth: 120,
+      headerName: 'Cantidad',
+      flex: 0.8,
+      minWidth: 100,
       valueFormatter(params: { value?: unknown }) {
         const v = Number(params.value);
-        return Number.isNaN(v) ? '' : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        return Number.isNaN(v) ? '' : v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
       }
     },
     {
       field: 'rateApplied',
-      headerName: 'Cotización',
+      headerName: 'Cotización ($)',
       flex: 0.8,
-      minWidth: 100
+      minWidth: 110,
+      valueFormatter(params: { value?: unknown }) {
+        const v = Number(params.value);
+        return Number.isNaN(v) ? '' : v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      }
     },
     {
       field: 'totalARS',
       headerName: 'Total ARS',
       flex: 1,
-      minWidth: 120,
-      valueFormatter(params: { value?: unknown }) {
+      minWidth: 130,
+      valueFormatter(params: { value?: unknown; row?: ExchangeOperation }) {
         const v = Number(params.value);
-        return Number.isNaN(v) ? '' : v.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const row = params.row;
+        if (Number.isNaN(v) || v === 0) {
+          if (row?.amountFrom != null && row?.rateApplied != null) {
+            const calc = Number(row.amountFrom) * Number(row.rateApplied);
+            return calc.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+          }
+          return '';
+        }
+        return v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      }
+    },
+    {
+      field: 'montoFormula',
+      headerName: 'Cálculo',
+      flex: 1.2,
+      minWidth: 180,
+      valueGetter: (value: unknown, row: ExchangeOperation) => {
+        const amt = Number(row?.amountFrom) || 0;
+        const rate = Number(row?.rateApplied) || 0;
+        const total = Number(row?.totalARS) ?? amt * rate;
+        if (amt === 0 && rate === 0) return '';
+        const amtStr = amt.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+        const rateStr = rate.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+        const totalStr = total.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        return `${amtStr} × ${rateStr} = $${totalStr}`;
       }
     },
     {
@@ -428,7 +456,7 @@ export const OperationsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, md: 8 }}>
           <Card>
-            <CardContent sx={{ height: 540 }}>
+            <CardContent sx={{ height: 540, display: 'flex', flexDirection: 'column' }}>
               {loadError && (
                 <Typography variant="body2" color="error" sx={{ mb: 1 }}>
                   {loadError}
@@ -437,22 +465,26 @@ export const OperationsPage: React.FC = () => {
                   </Button>
                 </Typography>
               )}
-              <DataGrid
-                rows={rows}
-                columns={columns}
-                loading={loading}
-                disableRowSelectionOnClick
-                slots={{
-                  toolbar: CustomToolbar
-                }}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-columnHeaders': {
-                    borderBottom: '1px solid',
-                    borderColor: 'divider'
-                  }
-                }}
-              />
+              <Box sx={{ flex: 1, width: '100%', minHeight: 0 }}>
+                <DataGrid
+                  rows={rows}
+                  columns={columns}
+                  loading={loading}
+                  disableRowSelectionOnClick
+                  autoHeight={false}
+                  sx={{
+                    height: '100%',
+                    border: 'none',
+                    '& .MuiDataGrid-columnHeaders': {
+                      borderBottom: '1px solid',
+                      borderColor: 'divider'
+                    }
+                  }}
+                  slots={{
+                    toolbar: CustomToolbar
+                  }}
+                />
+              </Box>
             </CardContent>
           </Card>
         </Grid>

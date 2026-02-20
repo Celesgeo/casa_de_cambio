@@ -12,16 +12,35 @@ const Placeholder: React.FC<{ title: string }> = ({ title }) => (
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const token = (() => {
-    try {
-      return safeStorage.getItem('ga_token');
-    } catch {
-      return null;
-    }
-  })();
-  if (!token) {
+  const [isChecking, setIsChecking] = React.useState(true);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const token = safeStorage.getItem('ga_token');
+        setIsAuthenticated(!!token);
+      } catch {
+        setIsAuthenticated(false);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  if (isChecking) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        Cargando…
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
   return <>{children}</>;
 }
 
@@ -34,15 +53,15 @@ const App: React.FC = () => {
         element={
           <ProtectedLayout>
             <AppLayout>
-            <Routes>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/operations" element={<OperationsPage />} />
-              <Route path="/employees" element={<Placeholder title="Employee management" />} />
-              <Route path="/reports" element={<Placeholder title="Reports & cash closing" />} />
-              <Route path="/settings" element={<Placeholder title="System settings" />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </AppLayout>
+              <Routes>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/operations" element={<OperationsPage />} />
+                <Route path="/employees" element={<Placeholder title="Employee management" />} />
+                <Route path="/reports" element={<Placeholder title="Reports & cash closing" />} />
+                <Route path="/settings" element={<Placeholder title="System settings" />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </AppLayout>
           </ProtectedLayout>
         }
       />

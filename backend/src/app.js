@@ -23,6 +23,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // CORS: allow frontend (localhost:5173, 5174, etc.) and mobile
+// In production (Render.com), allow all origins if CORS_ORIGINS=*
 const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
@@ -37,9 +38,13 @@ if (allowedOriginsEnv && allowedOriginsEnv !== '*') {
 }
 const corsOptions = {
   origin: (origin, callback) => {
+    // Allow all origins if CORS_ORIGINS=* (useful for production)
     if (allowedOriginsEnv === '*') return callback(null, true);
+    // Allow requests without origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
+    // Check allowed origins list
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    // In development, allow localhost
     if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return callback(null, true);
     }

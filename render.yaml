@@ -1,0 +1,30 @@
+services:
+  # Backend API - Web Service
+  - type: web
+    name: grupo-alvarez-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false  # Se configura manualmente en Render Dashboard
+      - key: JWT_SECRET
+        sync: false  # Se configura manualmente en Render Dashboard
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: REQUIRE_AUTH
+        value: "true"
+
+  # Frontend Web - Static Site
+  - type: static
+    name: grupo-alvarez-frontend
+    buildCommand: cd frontend-web && npm install && npm run build
+    staticPublishPath: ./frontend-web/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false  # Se configura con la URL del backend después del deploy

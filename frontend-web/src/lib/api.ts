@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { safeStorage } from './storage';
 
-// Central API: use env or default. For mobile/device use VITE_API_BASE_URL with your machine IP or tunnel.
+// Central API: use env or default. For production (Render.com), use VITE_API_BASE_URL.
+// For development, use localhost or the same hostname.
 const baseURL =
   import.meta.env.VITE_API_BASE_URL ||
   (typeof window !== 'undefined' && window.location?.hostname
@@ -30,6 +31,10 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       safeStorage.removeItem('ga_token');
+      // Redirect to login when token is invalid/expired (only for browser)
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
