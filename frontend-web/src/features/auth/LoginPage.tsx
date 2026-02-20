@@ -35,13 +35,17 @@ export const LoginPage: React.FC = () => {
     }
 
     setLoading(true);
+    let didRedirect = false;
     try {
-      const res = await login(email.trim(), password);
+      const emailNorm = email.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const res = await login(emailNorm, password);
       const data = res.data as { token?: string };
       if (data?.token) {
         safeStorage.setItem('ga_token', data.token);
         const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
-        navigate(from, { replace: true });
+        window.location.hash = from.startsWith('/') ? '#' + from : '#/' + from;
+        didRedirect = true;
+        window.location.reload();
         return;
       }
       setError('No se recibió el token de autenticación');
@@ -61,7 +65,7 @@ export const LoginPage: React.FC = () => {
         setError(msg || 'Error al iniciar sesión. Intentá nuevamente');
       }
     } finally {
-      setLoading(false);
+      if (!didRedirect) setLoading(false);
     }
   };
 
@@ -87,9 +91,6 @@ export const LoginPage: React.FC = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               Iniciar sesión para continuar
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Si ves error 404, entrá por la <a href="/" style={{ color: 'primary.main', fontWeight: 600 }}>página principal</a>.
             </Typography>
           </Box>
 
@@ -167,9 +168,6 @@ export const LoginPage: React.FC = () => {
 
             <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                Servidor en plan gratuito: la primera carga puede tardar unos segundos.
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" gutterBottom sx={{ mt: 1 }}>
                 <strong>Credenciales de prueba:</strong>
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block">

@@ -1,18 +1,20 @@
 import axios from 'axios';
 import { safeStorage } from './storage';
 
-// Central API: env at build time; fallback for production (Render) so login always works.
+// Central API: en producción (Render) siempre usar backend casa-de-cambio-1
 const envUrl = import.meta.env.VITE_API_BASE_URL;
-const isRender = typeof window !== 'undefined' && /\.onrender\.com$/.test(window.location?.hostname || '');
+const isProdRender =
+  typeof window !== 'undefined' &&
+  /\.onrender\.com$/.test(window.location?.hostname || '');
 const baseURL =
   envUrl ||
-  (isRender ? 'https://casa-de-cambio-1.onrender.com/api' : '') ||
-  (typeof window !== 'undefined' && window.location?.hostname
+  (isProdRender ? 'https://casa-de-cambio-1.onrender.com/api' : null) ||
+  (typeof window !== 'undefined' && window.location?.hostname && !window.location.hostname.includes('onrender')
     ? `${window.location.protocol}//${window.location.hostname}:4000/api`
     : 'http://localhost:4000/api');
 
 export const api = axios.create({
-  baseURL: baseURL || 'http://localhost:4000/api',
+  baseURL: String(baseURL || 'https://casa-de-cambio-1.onrender.com/api'),
   timeout: 35000,
   headers: { 'Content-Type': 'application/json' }
 });
