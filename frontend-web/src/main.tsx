@@ -22,10 +22,10 @@ const Root = () => {
 
 const rootEl = document.getElementById('root');
 if (rootEl) {
+  const isProduction = import.meta.env.PROD;
+  const app = <Root />;
   ReactDOM.createRoot(rootEl).render(
-    <React.StrictMode>
-      <Root />
-    </React.StrictMode>
+    isProduction ? app : <React.StrictMode>{app}</React.StrictMode>
   );
 }
 

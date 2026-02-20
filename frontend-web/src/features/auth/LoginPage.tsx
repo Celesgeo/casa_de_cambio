@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Button, Card, CardContent, TextField, Typography, Alert, CircularProgress } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { login } from '../../lib/api';
 import { safeStorage } from '../../lib/storage';
 
@@ -9,17 +9,16 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
 
-  // Si ya está autenticado, redirigir al dashboard
+  // Si ya está autenticado, redirigir al dashboard (full page para evitar errores de DOM)
   React.useEffect(() => {
     const token = safeStorage.getItem('ga_token');
     if (token) {
       const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      window.location.replace(from || '/');
     }
-  }, [navigate, location]);
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,10 +41,11 @@ export const LoginPage: React.FC = () => {
       if (data?.token) {
         safeStorage.setItem('ga_token', data.token);
         const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
-        navigate(from, { replace: true });
-      } else {
-        setError('No se recibió el token de autenticación');
+        // Redirección con recarga completa: evita "removeChild" y reconcilación en unmount
+        window.location.replace(from || '/');
+        return;
       }
+      setError('No se recibió el token de autenticación');
     } catch (err: unknown) {
       const ax = err as { message?: string; code?: string; response?: { data?: { message?: string }; status?: number } };
       const msg = ax?.response?.data?.message;
@@ -151,14 +151,16 @@ export const LoginPage: React.FC = () => {
                 textTransform: 'none'
               }}
             >
-              {loading ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircularProgress size={20} color="inherit" />
-                  Ingresando…
-                </Box>
-              ) : (
-                'Iniciar sesión'
-              )}
+              <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                {loading ? (
+                  <>
+                    <CircularProgress size={20} color="inherit" />
+                    <span>Ingresando…</span>
+                  </>
+                ) : (
+                  <span>Iniciar sesión</span>
+                )}
+              </Box>
             </Button>
 
             <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>

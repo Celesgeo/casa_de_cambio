@@ -41,7 +41,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  return <div style={{ minHeight: '100vh' }}>{children}</div>;
 }
 
 const App: React.FC = () => {
