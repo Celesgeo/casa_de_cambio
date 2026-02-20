@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Button, Card, CardContent, TextField, Typography, Alert, CircularProgress } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { login } from '../../lib/api';
 import { safeStorage } from '../../lib/storage';
 
@@ -10,15 +10,15 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Si ya está autenticado, redirigir al dashboard (full page para evitar errores de DOM)
   React.useEffect(() => {
     const token = safeStorage.getItem('ga_token');
     if (token) {
       const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
-      window.location.replace(from || '/');
+      navigate(from, { replace: true });
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +41,7 @@ export const LoginPage: React.FC = () => {
       if (data?.token) {
         safeStorage.setItem('ga_token', data.token);
         const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
-        // Redirección con recarga completa: evita "removeChild" y reconcilación en unmount
-        window.location.replace(from || '/');
+        navigate(from, { replace: true });
         return;
       }
       setError('No se recibió el token de autenticación');
@@ -52,8 +51,8 @@ export const LoginPage: React.FC = () => {
       const status = ax?.response?.status;
       const isConnectionRefused = msg === 'Network Error' || ax?.message === 'Network Error' || ax?.code === 'ERR_NETWORK';
       
-      if (isConnectionRefused) {
-        setError('No se puede conectar al servidor. Verificá que el backend esté corriendo: cd backend && npm run dev');
+      if (isConnectionRefused || ax?.code === 'ECONNABORTED') {
+        setError('No se pudo conectar al servidor. Si es la primera vez, el servidor puede tardar ~30 s en despertar (plan gratuito). Reintentá.');
       } else if (status === 401) {
         setError('Usuario o contraseña incorrectos');
       } else if (status === 400) {
@@ -88,6 +87,9 @@ export const LoginPage: React.FC = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               Iniciar sesión para continuar
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              Si ves error 404, entrá por la <a href="/" style={{ color: 'primary.main', fontWeight: 600 }}>página principal</a>.
             </Typography>
           </Box>
 
@@ -165,6 +167,9 @@ export const LoginPage: React.FC = () => {
 
             <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                Servidor en plan gratuito: la primera carga puede tardar unos segundos.
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" gutterBottom sx={{ mt: 1 }}>
                 <strong>Credenciales de prueba:</strong>
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block">

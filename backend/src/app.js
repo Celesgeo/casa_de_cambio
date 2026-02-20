@@ -22,7 +22,7 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// CORS: allow frontend (localhost:5173, 5174, etc.) and mobile
+// CORS: allow frontend (localhost, Render static sites) and mobile
 // In production (Render.com), allow all origins if CORS_ORIGINS=*
 const allowedOrigins = [
   'http://localhost:5173',
@@ -30,7 +30,9 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://127.0.0.1:5174',
   'http://localhost:3000',
-  'http://127.0.0.1:3000'
+  'http://127.0.0.1:3000',
+  'https://casa-de-cambio-2.onrender.com',
+  'https://grupo-alvarez-frontend.onrender.com'
 ];
 const allowedOriginsEnv = process.env.CORS_ORIGINS;
 if (allowedOriginsEnv && allowedOriginsEnv !== '*') {
@@ -38,13 +40,10 @@ if (allowedOriginsEnv && allowedOriginsEnv !== '*') {
 }
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow all origins if CORS_ORIGINS=* (useful for production)
     if (allowedOriginsEnv === '*') return callback(null, true);
-    // Allow requests without origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    // Check allowed origins list
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    // In development, allow localhost
+    if (/^https:\/\/[\w-]+\.onrender\.com$/.test(origin)) return callback(null, true);
     if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return callback(null, true);
     }

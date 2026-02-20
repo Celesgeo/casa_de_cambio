@@ -1,17 +1,19 @@
 import axios from 'axios';
 import { safeStorage } from './storage';
 
-// Central API: use env or default. For production (Render.com), use VITE_API_BASE_URL.
-// For development, use localhost or the same hostname.
+// Central API: env at build time; fallback for production (Render) so login always works.
+const envUrl = import.meta.env.VITE_API_BASE_URL;
+const isRender = typeof window !== 'undefined' && /\.onrender\.com$/.test(window.location?.hostname || '');
 const baseURL =
-  import.meta.env.VITE_API_BASE_URL ||
+  envUrl ||
+  (isRender ? 'https://casa-de-cambio-1.onrender.com/api' : '') ||
   (typeof window !== 'undefined' && window.location?.hostname
     ? `${window.location.protocol}//${window.location.hostname}:4000/api`
     : 'http://localhost:4000/api');
 
 export const api = axios.create({
-  baseURL,
-  timeout: 20000,
+  baseURL: baseURL || 'http://localhost:4000/api',
+  timeout: 35000,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -32,8 +34,9 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       safeStorage.removeItem('ga_token');
       // Redirect to login when token is invalid/expired (only for browser)
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash || '';
+        if (!hash.includes('login')) window.location.hash = '#/login';
       }
     }
     return Promise.reject(err);
