@@ -44,15 +44,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return <div style={{ minHeight: '100vh' }}>{children}</div>;
 }
 
-// Con HashRouter, si el usuario entró por /login (rewrite), poner #/login para que coincida la ruta
-const App: React.FC = () => {
-  React.useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.pathname === '/login' && !window.location.hash) {
-      window.location.hash = '#/login';
-    }
-  }, []);
-
-  return (
+const App: React.FC = () => (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
@@ -74,7 +66,6 @@ const App: React.FC = () => {
       />
     </Routes>
   );
-};
 
 export default App;
 

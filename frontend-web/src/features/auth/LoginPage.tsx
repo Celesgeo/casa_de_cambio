@@ -43,9 +43,8 @@ export const LoginPage: React.FC = () => {
       if (data?.token) {
         safeStorage.setItem('ga_token', data.token);
         const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
-        window.location.hash = from.startsWith('/') ? '#' + from : '#/' + from;
         didRedirect = true;
-        window.location.reload();
+        navigate(from, { replace: true });
         return;
       }
       setError('No se recibió el token de autenticación');

@@ -36,9 +36,8 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       safeStorage.removeItem('ga_token');
       // Redirect to login when token is invalid/expired (only for browser)
-      if (typeof window !== 'undefined') {
-        const hash = window.location.hash || '';
-        if (!hash.includes('login')) window.location.hash = '#/login';
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
       }
     }
     return Promise.reject(err);
