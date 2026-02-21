@@ -47,6 +47,7 @@ export const DashboardPage: React.FC = () => {
   const [closing, setClosing] = React.useState<ClosingResult | null>(null);
   const [quoteCompra, setQuoteCompra] = React.useState<number | null>(null);
   const [quoteVenta, setQuoteVenta] = React.useState<number | null>(null);
+  const [quoteUpdatedAt, setQuoteUpdatedAt] = React.useState<Date | null>(null);
   const quoteCardRef = React.useRef<HTMLDivElement>(null);
   const [loading, setLoading] = React.useState(true);
   const [syncing, setSyncing] = React.useState(false);
@@ -126,6 +127,7 @@ export const DashboardPage: React.FC = () => {
       const q = await fetchWhatsAppQuote();
       setQuoteCompra(q.compra);
       setQuoteVenta(q.venta);
+      setQuoteUpdatedAt(new Date());
     } catch (e) {
       if (process.env.NODE_ENV !== 'production') console.warn('Quote fetch error', e);
     }
@@ -544,19 +546,25 @@ export const DashboardPage: React.FC = () => {
               <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                 <TextField
                   size="small"
-                  label="Compra ($)"
+                  label="Compramos ($)"
                   type="number"
                   value={quoteCompra ?? ''}
-                  onChange={(e) => setQuoteCompra(e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) => {
+                    setQuoteCompra(e.target.value ? Number(e.target.value) : null);
+                    setQuoteUpdatedAt(new Date());
+                  }}
                   sx={{ width: 140 }}
                   inputProps={{ min: 0, step: 0.01 }}
                 />
                 <TextField
                   size="small"
-                  label="Venta ($)"
+                  label="Vendemos ($)"
                   type="number"
                   value={quoteVenta ?? ''}
-                  onChange={(e) => setQuoteVenta(e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) => {
+                    setQuoteVenta(e.target.value ? Number(e.target.value) : null);
+                    setQuoteUpdatedAt(new Date());
+                  }}
                   sx={{ width: 140 }}
                   inputProps={{ min: 0, step: 0.01 }}
                 />
@@ -585,14 +593,16 @@ export const DashboardPage: React.FC = () => {
                 </Typography>
                 <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.3)', pt: 1.5, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    USD Compra: ${formatQuoteNum(quoteCompra)}
+                    USD Compramos: ${formatQuoteNum(quoteCompra)}
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    USD Venta: ${formatQuoteNum(quoteVenta)}
+                    USD Vendemos: ${formatQuoteNum(quoteVenta)}
                   </Typography>
                 </Box>
                 <Typography variant="caption" sx={{ display: 'block', mt: 1.5, opacity: 0.85, fontStyle: 'italic' }}>
-                  Actualizado al momento
+                  {quoteUpdatedAt
+                    ? `Actualizado: ${quoteUpdatedAt.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}`
+                    : 'Actualizado al momento'}
                 </Typography>
               </Box>
             </CardContent>

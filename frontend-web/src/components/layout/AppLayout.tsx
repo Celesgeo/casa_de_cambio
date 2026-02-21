@@ -8,10 +8,13 @@ import {
   useTheme
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import LogoutIcon from '@mui/icons-material/Logout';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../../state/themeStore';
+import { safeStorage } from '../../lib/storage';
 import { Sidebar, drawerWidth } from './Sidebar';
 
 interface AppLayoutProps {
@@ -20,9 +23,15 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const toggleMode = useThemeStore((state) => state.toggleMode);
   const mode = useThemeStore((state) => state.mode);
   const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const handleLogout = () => {
+    safeStorage.removeItem('ga_token');
+    navigate('/login', { replace: true });
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -58,8 +67,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             GRUPO ALVAREZ EXCHANGE
           </Typography>
           <Divider orientation="vertical" flexItem sx={{ mx: 2, opacity: 0.2 }} />
-          <IconButton color="inherit" onClick={toggleMode}>
+          <IconButton color="inherit" onClick={toggleMode} title="Cambiar tema">
             {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+          </IconButton>
+          <IconButton color="inherit" onClick={handleLogout} title="Cerrar sesión">
+            <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
