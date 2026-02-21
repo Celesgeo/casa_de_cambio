@@ -465,7 +465,7 @@ export const OperationsPage: React.FC = () => {
                   </Button>
                 </Typography>
               )}
-              <Box sx={{ flex: 1, width: '100%', minHeight: 0 }}>
+              <Box sx={{ flex: 1, width: '100%', minHeight: 400, minWidth: 300, overflow: 'hidden' }}>
                 <DataGrid
                   rows={rows}
                   columns={columns}
