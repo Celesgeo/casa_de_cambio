@@ -174,7 +174,7 @@ export const LoginPage: React.FC = () => {
                   size="small"
                   variant="outlined"
                   sx={{ mb: 1.5 }}
-                  href="https://casa-de-cambio-1.onrender.com/api/health"
+                  href="https://casa-de-cambio-backend.onrender.com/api/health"
                   target="_blank"
                   rel="noopener"
                 >

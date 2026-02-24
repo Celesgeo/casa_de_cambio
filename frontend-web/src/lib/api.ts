@@ -5,7 +5,7 @@ import { safeStorage } from './storage';
 const baseURL =
   import.meta.env.VITE_API_BASE_URL ||
   (typeof window !== 'undefined' && /\.onrender\.com$/.test(window.location?.hostname || '')
-    ? 'https://casa-de-cambio-1.onrender.com/api'
+    ? 'https://casa-de-cambio-backend.onrender.com/api'
     : 'http://localhost:4000/api');
 
 export const api = axios.create({
