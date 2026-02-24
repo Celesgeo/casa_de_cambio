@@ -281,10 +281,12 @@ export const DashboardPage: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         gap: 3,
+        width: '100%',
         minHeight: 320,
         color: 'text.primary',
         visibility: 'visible',
-        opacity: 1
+        opacity: 1,
+        boxSizing: 'border-box'
       }}
     >
       {loadError && (

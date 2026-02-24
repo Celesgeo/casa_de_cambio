@@ -290,7 +290,7 @@ export const OperationsPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', boxSizing: 'border-box' }}>
       <Typography variant="h5" fontWeight={600}>
         Currency exchange operations
       </Typography>

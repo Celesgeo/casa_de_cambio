@@ -93,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
         open={mobileOpen}
         onClose={onClose}
         ModalProps={{
-          keepMounted: true,
+          keepMounted: false,
           disableEnforceFocus: false,
           disableAutoFocus: false
         }}

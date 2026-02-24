@@ -41,7 +41,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%', bgcolor: 'background.default' }}>
       <AppBar
         position="fixed"
         sx={{
@@ -81,15 +81,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       <Sidebar mobileOpen={mobileOpen} onClose={handleDrawerToggle} />
 
-      {/* Main content: margin-left on desktop so fixed permanent drawer never covers it; tabIndex for focus management (aria-hidden fix) */}
+      {/* Main: ancho explícito en desktop para no quedar bajo el drawer fijo; siempre visible */}
       <Box
         component="main"
         role="main"
         tabIndex={-1}
         sx={{
-          flexGrow: 1,
+          flex: '1 1 0%',
           minWidth: 0,
-          width: '100%',
+          width: { xs: '100%', md: `calc(100vw - ${drawerWidth}px)` },
+          maxWidth: '100%',
           minHeight: '60vh',
           pt: 10,
           pb: 4,
@@ -97,7 +98,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           ml: { xs: 0, md: drawerWidth },
           transition: 'margin 0.2s ease-out',
           position: 'relative',
-          zIndex: 0
+          zIndex: 1,
+          overflow: 'auto'
         }}
       >
         <Box sx={{ maxWidth: 1440, mx: 'auto', width: '100%', minHeight: 200 }}>
