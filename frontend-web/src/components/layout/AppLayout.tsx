@@ -34,6 +34,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   const handleDrawerToggle = () => {
+    if (!mobileOpen && typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setMobileOpen(!mobileOpen);
   };
 

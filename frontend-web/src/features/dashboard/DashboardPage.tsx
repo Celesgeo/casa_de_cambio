@@ -269,6 +269,9 @@ export const DashboardPage: React.FC = () => {
     .filter((p) => p.amount > 0)
     .map((p) => ({ name: p.currency, value: p.amount }));
 
+  const hasData = !!(summary || (marketRates != null) || (patrimony?.length !== 0) || (closing != null) || (ourRates != null));
+  const showContent = hasData || !loading;
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {loadError && (
@@ -295,12 +298,12 @@ export const DashboardPage: React.FC = () => {
               <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>
                 Cotización actualizada
               </Typography>
-              {loading ? (
-                <Skeleton height={36} />
-              ) : marketRates ? (
+              {(showContent && marketRates) ? (
                 <Typography variant="h6" fontWeight={600}>
                   Compra: ${marketRates.compra?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Venta: ${marketRates.venta?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Typography>
+              ) : loading && !marketRates ? (
+                <Skeleton height={36} />
               ) : (
                 <Typography variant="body2" color="text.secondary">Sin datos</Typography>
               )}
@@ -308,14 +311,14 @@ export const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Operaciones realizadas" value={operations.length} loading={loading} />
+          <StatCard label="Operaciones realizadas" value={operations.length} loading={loading && !hasData} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             label="Patrimonio (ARS)"
             value={closing?.actualBalanceARS ?? patrimony.find((p) => p.currency === 'ARS')?.amount ?? null}
             prefix="$"
-            loading={loading}
+            loading={loading && !hasData}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -324,9 +327,7 @@ export const DashboardPage: React.FC = () => {
               <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>
                 Ganancia / Pérdida
               </Typography>
-              {loading ? (
-                <Skeleton height={36} />
-              ) : closing?.gainLossPercent != null ? (
+              {(showContent && closing?.gainLossPercent != null) ? (
                 <Typography
                   variant="h6"
                   fontWeight={600}
@@ -334,6 +335,8 @@ export const DashboardPage: React.FC = () => {
                 >
                   {closing.gainLossPercent >= 0 ? '+' : ''}{closing.gainLossPercent.toFixed(2)}%
                 </Typography>
+              ) : loading && closing?.gainLossPercent == null ? (
+                <Skeleton height={36} />
               ) : (
                 <Typography variant="body2" color="text.secondary">—</Typography>
               )}
@@ -350,9 +353,7 @@ export const DashboardPage: React.FC = () => {
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Cotización en tiempo real (Dólar Blue)
               </Typography>
-              {loading ? (
-                <Skeleton height={60} />
-              ) : marketRates ? (
+              {(showContent && marketRates) ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                   <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Typography>Compra: ${marketRates.compra?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
@@ -382,6 +383,8 @@ export const DashboardPage: React.FC = () => {
                     </Typography>
                   )}
                 </Box>
+              ) : loading && !marketRates ? (
+                <Skeleton height={60} />
               ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography color="text.secondary">Sin datos</Typography>
@@ -537,9 +540,7 @@ export const DashboardPage: React.FC = () => {
                   Borrar operaciones
                 </Button>
               </Box>
-              {loading ? (
-                <Skeleton height={36} />
-              ) : (
+              {(showContent || !loading) ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   {topOperations.map((op) => {
                     const amountStr = op.amountFrom != null ? op.amountFrom.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0';
@@ -559,6 +560,8 @@ export const DashboardPage: React.FC = () => {
                     </Typography>
                   )}
                 </Box>
+              ) : (
+                <Skeleton height={36} />
               )}
             </CardContent>
           </Card>
@@ -710,14 +713,16 @@ function StatCard({
         <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>
           {label}
         </Typography>
-        {loading || value == null ? (
+        {(loading && (value === undefined || value === null)) ? (
           <Skeleton width="70%" height={36} />
-        ) : (
+        ) : value != null ? (
           <Typography variant="h5" fontWeight={600}>
             {prefix}
             {value.toLocaleString(undefined, { maximumFractionDigits: decimals, minimumFractionDigits: decimals })}
             {suffix}
           </Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">—</Typography>
         )}
       </CardContent>
     </Card>
