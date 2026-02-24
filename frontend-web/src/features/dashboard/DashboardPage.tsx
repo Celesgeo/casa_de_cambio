@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -50,6 +51,7 @@ export const DashboardPage: React.FC = () => {
   const [quoteUpdatedAt, setQuoteUpdatedAt] = React.useState<Date | null>(null);
   const quoteCardRef = React.useRef<HTMLDivElement>(null);
   const [loading, setLoading] = React.useState(true);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
   const [syncing, setSyncing] = React.useState(false);
   const [refreshingRates, setRefreshingRates] = React.useState(false);
   const [initAmounts, setInitAmounts] = React.useState<Record<string, string>>(
@@ -58,6 +60,7 @@ export const DashboardPage: React.FC = () => {
 
   const loadAll = React.useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [s, ops, pat, market, ours, close] = await Promise.all([
         fetchDashboardSummary(),
@@ -75,6 +78,10 @@ export const DashboardPage: React.FC = () => {
       setClosing(close);
     } catch (e) {
       console.error('Dashboard load error', e);
+      const err = e as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const msg = err?.response?.data?.message || err?.message || 'Error al cargar datos';
+      const status = err?.response?.status;
+      setLoadError(status === 401 ? 'Sesión expirada. Volvé a iniciar sesión.' : msg);
     } finally {
       setLoading(false);
     }
@@ -208,6 +215,19 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {loadError && (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => loadAll()}>
+              Reintentar
+            </Button>
+          }
+          onClose={() => setLoadError(null)}
+        >
+          {loadError}
+        </Alert>
+      )}
       <Typography variant="h5" fontWeight={600}>
         Trading overview
       </Typography>

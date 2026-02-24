@@ -1,26 +1,30 @@
 import axios from 'axios';
 import { safeStorage } from './storage';
 
-// baseURL dinámico: usa env en build, fallback localhost en dev
-const baseURL =
-  import.meta.env.VITE_API_BASE_URL ||
-  (typeof window !== 'undefined' && /\.onrender\.com$/.test(window.location?.hostname || '')
-    ? 'https://casa-de-cambio-backend.onrender.com/api'
-    : 'http://localhost:4000/api');
+const getBaseURL = (): string => {
+  const env = import.meta.env.VITE_API_BASE_URL;
+  if (env && typeof env === 'string' && env.trim()) return env.trim();
+  if (typeof window !== 'undefined' && /\.onrender\.com$/.test(window.location?.hostname || '')) {
+    return 'https://casa-de-cambio-backend.onrender.com/api';
+  }
+  return 'http://localhost:4000/api';
+};
 
 export const api = axios.create({
-  baseURL,
+  baseURL: getBaseURL(),
   timeout: 65000,
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Attach token when present (safe for SSR/mobile where localStorage may be missing)
 api.interceptors.request.use((config) => {
   try {
     const token = safeStorage.getItem('ga_token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   } catch {
-    // ignore
+    /* ignore */
   }
   return config;
 });

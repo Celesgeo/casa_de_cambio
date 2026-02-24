@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
 const generateToken = (id, role) =>
-  jwt.sign({ id, role }, process.env.JWT_SECRET || 'fallback-secret-change-me', { expiresIn: '7d' });
+  jwt.sign({ id, role }, process.env.JWT_SECRET || 'Alvarez2026', { expiresIn: '7d' });
 
 // @route POST /api/auth/register
 exports.register = async (req, res, next) => {
