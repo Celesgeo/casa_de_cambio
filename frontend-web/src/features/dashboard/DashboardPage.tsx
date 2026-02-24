@@ -25,6 +25,7 @@ import {
   syncOurRates
 } from '../../lib/api';
 import type { ClosingResult, DashboardSummary, ExchangeOperation, PatrimonyItem } from '../../lib/api';
+import { safeStorage } from '../../lib/storage';
 
 const CURRENCIES = ['USD', 'ARS', 'EUR', 'BRL', 'CLP'];
 const COLORS = ['#4C8DFF', '#00E0B8', '#FFB74D', '#EF5350', '#AB47BC'];
@@ -57,8 +58,13 @@ export const DashboardPage: React.FC = () => {
   const [initAmounts, setInitAmounts] = React.useState<Record<string, string>>(
     Object.fromEntries(CURRENCIES.map((c) => [c, '']))
   );
+  const [tokenForLoad, setTokenForLoad] = React.useState<string | null>(() =>
+    typeof window !== 'undefined' ? safeStorage.getItem('ga_token') : null
+  );
 
   const loadAll = React.useCallback(async () => {
+    const token = safeStorage.getItem('ga_token');
+    console.log('Intentando cargar datos con token:', token ? `${token.substring(0, 12)}...` : 'NO HAY TOKEN');
     setLoading(true);
     setLoadError(null);
     try {
@@ -70,6 +76,14 @@ export const DashboardPage: React.FC = () => {
         fetchOurRates(),
         fetchClosingCalculation()
       ]);
+      console.log('Datos recibidos con éxito:', {
+        summary: !!s,
+        operationsCount: Array.isArray(ops) ? ops.length : 0,
+        patrimonyCount: Array.isArray(pat) ? pat.length : 0,
+        marketRates: !!market,
+        ourRates: !!ours,
+        closing: !!close
+      });
       setSummary(s);
       setOperations(ops);
       setPatrimony(pat);
@@ -88,8 +102,12 @@ export const DashboardPage: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
+    setTokenForLoad(safeStorage.getItem('ga_token'));
+  }, []);
+
+  React.useEffect(() => {
     loadAll();
-  }, [loadAll]);
+  }, [loadAll, tokenForLoad]);
 
   const handleUpdateRates = async () => {
     setSyncing(true);

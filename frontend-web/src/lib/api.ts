@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { safeStorage } from './storage';
 
+// VITE_API_BASE_URL se inyecta en tiempo de build; en Render (Static Site) definila en Environment.
 const getBaseURL = (): string => {
   const env = import.meta.env.VITE_API_BASE_URL;
   if (env && typeof env === 'string' && env.trim()) return env.trim();
@@ -10,8 +11,12 @@ const getBaseURL = (): string => {
   return 'http://localhost:4000/api';
 };
 
+const resolvedBaseURL = getBaseURL();
+if (typeof window !== 'undefined') {
+  console.log('[API] baseURL:', resolvedBaseURL, '| VITE_API_BASE_URL (build):', import.meta.env.VITE_API_BASE_URL || '(no definida)');
+}
 export const api = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: resolvedBaseURL,
   timeout: 65000,
   headers: { 'Content-Type': 'application/json' }
 });
