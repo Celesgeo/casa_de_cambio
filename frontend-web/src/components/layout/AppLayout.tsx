@@ -81,21 +81,26 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       <Sidebar mobileOpen={mobileOpen} onClose={handleDrawerToggle} />
 
-      {/* Main content: margin-left on desktop so fixed permanent drawer never covers it */}
+      {/* Main content: margin-left on desktop so fixed permanent drawer never covers it; tabIndex for focus management (aria-hidden fix) */}
       <Box
         component="main"
+        role="main"
+        tabIndex={-1}
         sx={{
           flexGrow: 1,
           minWidth: 0,
           width: '100%',
+          minHeight: '60vh',
           pt: 10,
           pb: 4,
           px: { xs: 2, sm: 3, md: 4 },
           ml: { xs: 0, md: drawerWidth },
-          transition: 'margin 0.2s ease-out'
+          transition: 'margin 0.2s ease-out',
+          position: 'relative',
+          zIndex: 0
         }}
       >
-        <Box sx={{ maxWidth: 1440, mx: 'auto', width: '100%' }}>
+        <Box sx={{ maxWidth: 1440, mx: 'auto', width: '100%', minHeight: 200 }}>
           {children}
         </Box>
       </Box>

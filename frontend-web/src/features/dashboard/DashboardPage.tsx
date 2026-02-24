@@ -58,13 +58,12 @@ export const DashboardPage: React.FC = () => {
   const [initAmounts, setInitAmounts] = React.useState<Record<string, string>>(
     Object.fromEntries(CURRENCIES.map((c) => [c, '']))
   );
-  const [tokenForLoad, setTokenForLoad] = React.useState<string | null>(() =>
-    typeof window !== 'undefined' ? safeStorage.getItem('ga_token') : null
-  );
+  const mountedRef = React.useRef(true);
 
   const loadAll = React.useCallback(async () => {
     const token = safeStorage.getItem('ga_token');
     console.log('Intentando cargar datos con token:', token ? `${token.substring(0, 12)}...` : 'NO HAY TOKEN');
+    if (!mountedRef.current) return;
     setLoading(true);
     setLoadError(null);
     try {
@@ -101,6 +100,7 @@ export const DashboardPage: React.FC = () => {
       const oursNorm = ours && typeof ours === 'object' ? ours : null;
       const closingNorm = close && typeof close === 'object' ? close as ClosingResult : null;
 
+      if (!mountedRef.current) return;
       setSummary(summaryNorm);
       setOperations(operationsNorm);
       setPatrimony(patrimonyNorm);
@@ -116,23 +116,24 @@ export const DashboardPage: React.FC = () => {
         closing: !!closingNorm
       });
     } catch (e) {
+      if (!mountedRef.current) return;
       console.error('Dashboard load error', e);
       const err = e as { response?: { status?: number; data?: { message?: string } }; message?: string };
       const msg = err?.response?.data?.message || err?.message || 'Error al cargar datos';
       const status = err?.response?.status;
       setLoadError(status === 401 ? 'Sesión expirada. Volvé a iniciar sesión.' : msg);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    setTokenForLoad(safeStorage.getItem('ga_token'));
-  }, []);
-
-  React.useEffect(() => {
+    mountedRef.current = true;
     loadAll();
-  }, [loadAll, tokenForLoad]);
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [loadAll]);
 
   React.useEffect(() => {
     console.log('Estado actualizado (post-render):', {
@@ -273,7 +274,19 @@ export const DashboardPage: React.FC = () => {
   const showContent = hasData || !loading;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box
+      component="section"
+      aria-label="Dashboard"
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3,
+        minHeight: 320,
+        color: 'text.primary',
+        visibility: 'visible',
+        opacity: 1
+      }}
+    >
       {loadError && (
         <Alert
           severity="error"
@@ -287,13 +300,13 @@ export const DashboardPage: React.FC = () => {
           {loadError}
         </Alert>
       )}
-      <Typography variant="h5" fontWeight={600}>
+      <Typography variant="h5" fontWeight={600} sx={{ color: 'text.primary' }}>
         Trading overview
       </Typography>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ display: 'flex', flexWrap: 'wrap' }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card>
+          <Card sx={{ bgcolor: 'background.paper', color: 'text.primary' }}>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>
                 Cotización actualizada
@@ -322,7 +335,7 @@ export const DashboardPage: React.FC = () => {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card>
+          <Card sx={{ bgcolor: 'background.paper', color: 'text.primary' }}>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>
                 Ganancia / Pérdida
@@ -708,7 +721,7 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <Card>
+    <Card sx={{ bgcolor: 'background.paper', color: 'text.primary' }}>
       <CardContent>
         <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>
           {label}

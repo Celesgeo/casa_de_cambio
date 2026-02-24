@@ -55,6 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
               onClick={() => {
                 navigate(item.path);
                 onClose();
+                setTimeout(() => (document.querySelector('main') as HTMLElement | null)?.focus(), 0);
               }}
               sx={{
                 mx: 1,
