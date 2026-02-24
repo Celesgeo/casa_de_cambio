@@ -12,7 +12,7 @@ const getBaseURL = (): string => {
 };
 
 const resolvedBaseURL = getBaseURL();
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   console.log('[API] baseURL:', resolvedBaseURL, '| VITE_API_BASE_URL (build):', import.meta.env.VITE_API_BASE_URL || '(no definida)');
 }
 export const api = axios.create({

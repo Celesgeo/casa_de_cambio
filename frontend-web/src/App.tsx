@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { OperationsPage } from './features/operations/OperationsPage';
@@ -10,62 +10,33 @@ const Placeholder: React.FC<{ title: string }> = ({ title }) => (
   <div>{title} (to be implemented)</div>
 );
 
-function ProtectedLayout({ children }: { children: React.ReactNode }) {
+function ProtectedLayout() {
   const location = useLocation();
-  const [isChecking, setIsChecking] = React.useState(true);
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const token = safeStorage.getItem('ga_token');
 
-  React.useEffect(() => {
-    const checkAuth = () => {
-      try {
-        const token = safeStorage.getItem('ga_token');
-        setIsAuthenticated(!!token);
-      } catch {
-        setIsAuthenticated(false);
-      } finally {
-        setIsChecking(false);
-      }
-    };
-    checkAuth();
-  }, []);
-
-  if (isChecking) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        Cargando…
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
+  if (!token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <div style={{ minHeight: '100vh' }}>{children}</div>;
+  return (
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
+  );
 }
 
 const App: React.FC = () => (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/*"
-        element={
-          <ProtectedLayout>
-            <AppLayout>
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/operations" element={<OperationsPage />} />
-                <Route path="/employees" element={<Placeholder title="Employee management" />} />
-                <Route path="/reports" element={<Placeholder title="Reports & cash closing" />} />
-                <Route path="/settings" element={<Placeholder title="System settings" />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </AppLayout>
-          </ProtectedLayout>
-        }
-      />
-    </Routes>
-  );
+  <Routes>
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/" element={<ProtectedLayout />}>
+      <Route index element={<DashboardPage />} />
+      <Route path="operations" element={<OperationsPage />} />
+      <Route path="employees" element={<Placeholder title="Employee management" />} />
+      <Route path="reports" element={<Placeholder title="Reports & cash closing" />} />
+      <Route path="settings" element={<Placeholder title="System settings" />} />
+    </Route>
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Routes>
+);
 
 export default App;
-

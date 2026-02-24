@@ -62,7 +62,7 @@ export const DashboardPage: React.FC = () => {
 
   const loadAll = React.useCallback(async () => {
     const token = safeStorage.getItem('ga_token');
-    console.log('Intentando cargar datos con token:', token ? `${token.substring(0, 12)}...` : 'NO HAY TOKEN');
+    if (import.meta.env.DEV) console.log('Intentando cargar datos con token:', token ? `${token.substring(0, 12)}...` : 'NO HAY TOKEN');
     if (!mountedRef.current) return;
     setLoading(true);
     setLoadError(null);
@@ -75,7 +75,7 @@ export const DashboardPage: React.FC = () => {
         fetchOurRates(),
         fetchClosingCalculation()
       ]);
-      console.log('Datos recibidos con éxito:', {
+      if (import.meta.env.DEV) console.log('Datos recibidos con éxito:', {
         summary: !!s,
         operationsCount: Array.isArray(ops) ? ops.length : 0,
         patrimonyCount: Array.isArray(pat) ? pat.length : 0,
@@ -107,7 +107,7 @@ export const DashboardPage: React.FC = () => {
       setMarketRates(marketNorm);
       setOurRates(oursNorm);
       setClosing(closingNorm);
-      console.log('Estado que se setea:', {
+      if (import.meta.env.DEV) console.log('Estado que se setea:', {
         summary: summaryNorm,
         operationsCount: operationsNorm.length,
         patrimonyCount: patrimonyNorm.length,
@@ -136,7 +136,7 @@ export const DashboardPage: React.FC = () => {
   }, [loadAll]);
 
   React.useEffect(() => {
-    console.log('Estado actualizado (post-render):', {
+    if (import.meta.env.DEV) console.log('Estado actualizado (post-render):', {
       summary: summary != null,
       summaryVal: summary,
       operationsCount: operations?.length ?? 0,
