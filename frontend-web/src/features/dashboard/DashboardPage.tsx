@@ -84,12 +84,37 @@ export const DashboardPage: React.FC = () => {
         ourRates: !!ours,
         closing: !!close
       });
-      setSummary(s);
-      setOperations(ops);
-      setPatrimony(pat);
-      setMarketRates(market);
-      setOurRates(ours);
-      setClosing(close);
+
+      const raw = s as DashboardSummary | undefined;
+      const summaryNorm: DashboardSummary | null = s && typeof s === 'object'
+        ? {
+            totalDailyVolume: Number(raw?.totalDailyVolume) || 0,
+            totalPatrimony: Number(raw?.totalPatrimony) || 0,
+            spreadAverage: Number(raw?.spreadAverage) || 0,
+            operationsToday: Number(raw?.operationsToday) || 0,
+            cashOnHand: Number(raw?.cashOnHand) || 0
+          }
+        : null;
+      const operationsNorm = Array.isArray(ops) ? ops : [];
+      const patrimonyNorm = Array.isArray(pat) ? pat : [];
+      const marketNorm = market && typeof market === 'object' ? market : null;
+      const oursNorm = ours && typeof ours === 'object' ? ours : null;
+      const closingNorm = close && typeof close === 'object' ? close as ClosingResult : null;
+
+      setSummary(summaryNorm);
+      setOperations(operationsNorm);
+      setPatrimony(patrimonyNorm);
+      setMarketRates(marketNorm);
+      setOurRates(oursNorm);
+      setClosing(closingNorm);
+      console.log('Estado que se setea:', {
+        summary: summaryNorm,
+        operationsCount: operationsNorm.length,
+        patrimonyCount: patrimonyNorm.length,
+        marketRates: !!marketNorm,
+        ourRates: !!oursNorm,
+        closing: !!closingNorm
+      });
     } catch (e) {
       console.error('Dashboard load error', e);
       const err = e as { response?: { status?: number; data?: { message?: string } }; message?: string };
@@ -108,6 +133,19 @@ export const DashboardPage: React.FC = () => {
   React.useEffect(() => {
     loadAll();
   }, [loadAll, tokenForLoad]);
+
+  React.useEffect(() => {
+    console.log('Estado actualizado (post-render):', {
+      summary: summary != null,
+      summaryVal: summary,
+      operationsCount: operations?.length ?? 0,
+      patrimonyCount: patrimony?.length ?? 0,
+      marketRates: marketRates != null,
+      ourRates: ourRates != null,
+      closing: closing != null,
+      loading
+    });
+  }, [summary, operations, patrimony, marketRates, ourRates, closing, loading]);
 
   const handleUpdateRates = async () => {
     setSyncing(true);
