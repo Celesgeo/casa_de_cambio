@@ -23,39 +23,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// CORS: allow frontend (localhost, Render static sites) and mobile
-// In production (Render.com), allow all origins if CORS_ORIGINS=*
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:5174',
-  'http://127.0.0.1:5174',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'https://casa-de-cambio-2.onrender.com',
-  'https://grupo-alvarez-frontend.onrender.com'
-];
-const allowedOriginsEnv = process.env.CORS_ORIGINS;
-if (allowedOriginsEnv && allowedOriginsEnv !== '*') {
-  allowedOrigins.push(...allowedOriginsEnv.split(',').map((o) => o.trim()));
-}
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (allowedOriginsEnv === '*') return callback(null, true);
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    if (/^https:\/\/[\w-]+\.onrender\.com$/.test(origin)) return callback(null, true);
-    if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Authorization']
-};
-app.use(cors(corsOptions));
+// CORS simple: permitir todas las origins y credenciales (Authorization)
+app.use(
+  cors({
+    origin: '*',
+    credentials: true
+  })
+);
 
 // Simple healthcheck for web & mobile to verify connectivity
 app.get('/api/health', (req, res) => {
