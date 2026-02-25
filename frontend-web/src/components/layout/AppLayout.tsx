@@ -81,7 +81,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       <Sidebar mobileOpen={mobileOpen} onClose={handleDrawerToggle} />
 
-      {/* Main: ancho explícito en desktop para no quedar bajo el drawer fijo; siempre visible */}
+      {/* Main: ancho = 100% - drawerWidth en desktop para no recortar por el sidebar permanente */}
       <Box
         component="main"
         role="main"
@@ -89,8 +89,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         sx={{
           flex: '1 1 0%',
           minWidth: 0,
-          width: { xs: '100%', md: `calc(100vw - ${drawerWidth}px)` },
-          maxWidth: '100%',
+          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
+          maxWidth: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
           minHeight: '60vh',
           pt: 10,
           pb: 4,
@@ -99,10 +99,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           transition: 'margin 0.2s ease-out',
           position: 'relative',
           zIndex: 1,
-          overflow: 'auto'
+          overflow: 'auto',
+          boxSizing: 'border-box'
         }}
       >
-        <Box sx={{ maxWidth: 1440, mx: 'auto', width: '100%', minHeight: 200 }}>
+        <Box sx={{ maxWidth: 1440, mx: 'auto', width: '100%', minHeight: 200, boxSizing: 'border-box' }}>
           {children}
         </Box>
       </Box>
