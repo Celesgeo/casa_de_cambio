@@ -200,16 +200,33 @@ export const DashboardPage: React.FC = () => {
   const formatQuoteNum = (n: number | null) =>
     n != null ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
 
-  const handleDownloadQuoteImage = async () => {
-    const el = quoteCardRef.current;
-    if (!el) return;
-    try {
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false
+  const captureQuoteCard = (): Promise<HTMLCanvasElement> =>
+    new Promise((resolve, reject) => {
+      const el = quoteCardRef.current;
+      if (!el) {
+        reject(new Error('No quote card ref'));
+        return;
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(async () => {
+          try {
+            const canvas = await html2canvas(el, {
+              scale: 2,
+              useCORS: true,
+              backgroundColor: null,
+              logging: false
+            });
+            resolve(canvas);
+          } catch (e) {
+            reject(e);
+          }
+        });
       });
+    });
+
+  const handleDownloadQuoteImage = async () => {
+    try {
+      const canvas = await captureQuoteCard();
       const link = document.createElement('a');
       link.download = `cotizacion-grupo-alvarez-${new Date().toISOString().slice(0, 10)}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -220,15 +237,8 @@ export const DashboardPage: React.FC = () => {
   };
 
   const handleCopyQuoteImage = async () => {
-    const el = quoteCardRef.current;
-    if (!el) return;
     try {
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false
-      });
+      const canvas = await captureQuoteCard();
       canvas.toBlob(async (blob) => {
         if (blob && navigator.clipboard?.write) {
           try {
