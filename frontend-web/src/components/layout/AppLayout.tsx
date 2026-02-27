@@ -81,16 +81,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       <Sidebar mobileOpen={mobileOpen} onClose={handleDrawerToggle} />
 
-      {/* Main: ancho mínimo en desktop para no recortarse al cerrar consola / pantalla completa */}
+      {/* Main: sigue patrón oficial de MUI layout con drawer fijo; flexGrow y margin-left para no quedar tapado ni colapsar en pantalla completa */}
       <Box
         component="main"
         role="main"
         tabIndex={-1}
         sx={{
-          flex: '1 1 0%',
-          minWidth: { xs: 0, md: `calc(100vw - ${drawerWidth}px)` },
-          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
-          maxWidth: '100%',
+          flexGrow: 1,
+          minWidth: 0,
           minHeight: '60vh',
           pt: 10,
           pb: 4,
