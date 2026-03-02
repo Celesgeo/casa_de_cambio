@@ -1,4 +1,4 @@
-const { fetchDolarBlue } = require('../services/quoteService');
+const { fetchDolarBlue, fetchFinanzasArgy } = require('../services/quoteService');
 
 // In-memory "our" rates (can be synced from market) - shared for quote controller
 let ourRates = {
@@ -15,6 +15,17 @@ exports.getMarketRates = async (req, res, next) => {
     return res.json(data);
   } catch (error) {
     console.error('Market rates error:', error);
+    next(error);
+  }
+};
+
+// @route GET /api/rates/finanzasargy
+exports.getFinanzasArgyRates = async (req, res, next) => {
+  try {
+    const data = await fetchFinanzasArgy();
+    return res.json(data);
+  } catch (error) {
+    console.error('FinanzasArgy rates error:', error);
     next(error);
   }
 };

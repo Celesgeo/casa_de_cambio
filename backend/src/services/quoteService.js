@@ -171,13 +171,77 @@ function fetchDolarApi() {
   });
 }
 
+/**
+ * Parse the first three Dólar Blue variants from FinanzasArgy
+ * https://www.finanzasargy.com/cotizaciones-mercado-blue
+ * Returns: { blue: {compra,venta}, blueGba: {compra,venta}, blueInterior: {compra,venta}, updated }
+ */
+function parseFinanzasArgy(html) {
+  const text = html.replace(/\s+/g, ' ');
+
+  const extractSection = (name) => {
+    const re = new RegExp(`${name}[^$]*\\$([\\d.,]+)[^$]*\\$([\\d.,]+)`, 'i');
+    const m = text.match(re);
+    if (!m) return null;
+    const venta = normalizeNum(m[1]);
+    const compra = normalizeNum(m[2]);
+    if (venta != null && compra != null && venta > 0 && compra > 0) return { compra, venta };
+    return null;
+  };
+
+  const blue = extractSection('Dólar Blue(?!\\s*GBA)(?!\\s*Interior)');
+  const blueGba = extractSection('Dólar Blue GBA');
+  const blueInterior = extractSection('Dólar Blue Interior');
+
+  if (blue && blueGba && blueInterior) {
+    return {
+      blue,
+      blueGba,
+      blueInterior,
+      source: 'finanzasargy.com',
+      updated: new Date().toISOString()
+    };
+  }
+  return null;
+}
+
+function fetchFinanzasArgy() {
+  const url = 'https://www.finanzasargy.com/cotizaciones-mercado-blue';
+  return fetchHtml(url)
+    .then((html) => {
+      const parsed = parseFinanzasArgy(html);
+      if (parsed) return parsed;
+      return Promise.reject(new Error('Could not parse FinanzasArgy HTML'));
+    })
+    .catch((err) => {
+      console.error('FinanzasArgy fetch error:', err.message);
+      return fetchFinanzasArgyFallback();
+    });
+}
+
+/**
+ * Fallback: FinanzasArgy loads data client-side (no HTML parse possible).
+ * Use DolarAPI blue as reference for all three variants.
+ */
+function fetchFinanzasArgyFallback() {
+  return fetchDolarApi().then((data) => ({
+    blue: { compra: data.compra, venta: data.venta },
+    blueGba: { compra: data.compra, venta: data.venta },
+    blueInterior: { compra: data.compra, venta: data.venta },
+    source: 'finanzasargy.com (valor ref. vía DolarAPI)',
+    updated: data.updated || new Date().toISOString()
+  }));
+}
+
 module.exports = {
   fetchDolarBlue,
   fetchDolarHoy,
   fetchDolarApi,
   fetchElCronista,
+  fetchFinanzasArgy,
   parseDolarHoy,
   parseElCronista,
+  parseFinanzasArgy,
   FALLBACK_USD_BUY,
   FALLBACK_USD_SELL
 };

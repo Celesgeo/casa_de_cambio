@@ -113,6 +113,14 @@ export interface MarketRates {
   updated?: string;
 }
 
+export interface FinanzasArgyRates {
+  blue: { compra: number; venta: number };
+  blueGba: { compra: number; venta: number };
+  blueInterior: { compra: number; venta: number };
+  source?: string;
+  updated?: string;
+}
+
 export interface ClosingResult {
   initialPatrimonyARS: number;
   totalBuysARS: number;
@@ -185,6 +193,9 @@ export const initPatrimony = (entries: { currency: string; amount: number }[]) =
 // --- Rates ---
 export const fetchMarketRates = () =>
   api.get<MarketRates>('/rates/market').then((r) => r.data);
+
+export const fetchFinanzasArgyRates = () =>
+  api.get<FinanzasArgyRates>('/rates/finanzasargy').then((r) => r.data);
 
 export const fetchOurRates = () =>
   api.get<{ USD: { compra: number; venta: number }; lastUpdated: string | null }>('/rates/ours').then((r) => r.data);

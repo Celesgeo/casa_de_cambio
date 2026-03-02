@@ -95,13 +95,18 @@ export const LoginPage: React.FC = () => {
             </Typography>
           </Box>
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            autoComplete="off"
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+          >
             <TextField
               label="Usuario"
               type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="grupoalvarez"
+              autoComplete="username"
               required
               fullWidth
               size="medium"
@@ -118,7 +123,7 @@ export const LoginPage: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="elterribleusd1"
+              autoComplete="current-password"
               required
               fullWidth
               size="medium"
@@ -182,13 +187,10 @@ export const LoginPage: React.FC = () => {
                 </Button>
               )}
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                <strong>Credenciales de prueba:</strong>
+                Por seguridad, no mostramos credenciales en pantalla.
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block">
-                Usuario: grupoalvarez
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Contraseña: elterribleusd1
+                Si olvidaste tu usuario o contraseña, contactá al administrador del sistema.
               </Typography>
             </Box>
           </Box>

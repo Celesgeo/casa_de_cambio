@@ -17,6 +17,7 @@ import {
   fetchClosingCalculation,
   fetchDashboardSummary,
   fetchExchangeOperations,
+  fetchFinanzasArgyRates,
   fetchMarketRates,
   fetchOurRates,
   fetchPatrimony,
@@ -24,7 +25,7 @@ import {
   initPatrimony,
   syncOurRates
 } from '../../lib/api';
-import type { ClosingResult, DashboardSummary, ExchangeOperation, PatrimonyItem } from '../../lib/api';
+import type { ClosingResult, DashboardSummary, ExchangeOperation, FinanzasArgyRates, PatrimonyItem } from '../../lib/api';
 import { safeStorage } from '../../lib/storage';
 
 const CURRENCIES = ['USD', 'ARS', 'EUR', 'BRL', 'CLP'];
@@ -45,6 +46,7 @@ export const DashboardPage: React.FC = () => {
   const [operations, setOperations] = React.useState<ExchangeOperation[]>([]);
   const [patrimony, setPatrimony] = React.useState<PatrimonyItem[]>([]);
   const [marketRates, setMarketRates] = React.useState<{ compra: number; venta: number; source?: string } | null>(null);
+  const [finanzasArgy, setFinanzasArgy] = React.useState<FinanzasArgyRates | null>(null);
   const [ourRates, setOurRates] = React.useState<{ USD: { compra: number; venta: number } } | null>(null);
   const [closing, setClosing] = React.useState<ClosingResult | null>(null);
   const [quoteCompra, setQuoteCompra] = React.useState<number | null>(null);
@@ -67,13 +69,14 @@ export const DashboardPage: React.FC = () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const [s, ops, pat, market, ours, close] = await Promise.all([
+      const [s, ops, pat, market, ours, close, faResult] = await Promise.all([
         fetchDashboardSummary(),
         fetchExchangeOperations(),
         fetchPatrimony(),
         fetchMarketRates(),
         fetchOurRates(),
-        fetchClosingCalculation()
+        fetchClosingCalculation(),
+        fetchFinanzasArgyRates().catch(() => null)
       ]);
       if (import.meta.env.DEV) console.log('Datos recibidos con éxito:', {
         summary: !!s,
@@ -107,6 +110,7 @@ export const DashboardPage: React.FC = () => {
       setMarketRates(marketNorm);
       setOurRates(oursNorm);
       setClosing(closingNorm);
+      setFinanzasArgy(faResult && typeof faResult === 'object' ? faResult : null);
       if (import.meta.env.DEV) console.log('Estado que se setea:', {
         summary: summaryNorm,
         operationsCount: operationsNorm.length,
@@ -266,8 +270,12 @@ export const DashboardPage: React.FC = () => {
   const handleRefreshMarketRates = async () => {
     setRefreshingRates(true);
     try {
-      const market = await fetchMarketRates();
+      const [market, fa] = await Promise.all([
+        fetchMarketRates(),
+        fetchFinanzasArgyRates().catch(() => null)
+      ]);
       setMarketRates(market);
+      setFinanzasArgy(fa);
     } catch (e) {
       console.error('Refresh market rates error', e);
     } finally {
@@ -379,7 +387,7 @@ export const DashboardPage: React.FC = () => {
                 Cotización en tiempo real (Dólar Blue)
               </Typography>
               {(showContent && marketRates) ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Typography>Compra: ${marketRates.compra?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
                     <Typography>Venta: ${marketRates.venta?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
@@ -407,6 +415,70 @@ export const DashboardPage: React.FC = () => {
                       )}
                     </Typography>
                   )}
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                      Sugerencia externa (FinanzasArgy)
+                    </Typography>
+                    <Grid container spacing={1}>
+                      {finanzasArgy ? (
+                        <>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <Card variant="outlined" sx={{ borderStyle: 'dashed', borderColor: 'divider', bgcolor: 'background.default' }}>
+                              <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  Dólar Blue
+                                </Typography>
+                                <Typography variant="body2" fontWeight={600}>
+                                  Compra ${finanzasArgy.blue.compra.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Venta ${finanzasArgy.blue.venta.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <Card variant="outlined" sx={{ borderStyle: 'dashed', borderColor: 'divider', bgcolor: 'background.default' }}>
+                              <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  Dólar Blue GBA
+                                </Typography>
+                                <Typography variant="body2" fontWeight={600}>
+                                  Compra ${finanzasArgy.blueGba.compra.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Venta ${finanzasArgy.blueGba.venta.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <Card variant="outlined" sx={{ borderStyle: 'dashed', borderColor: 'divider', bgcolor: 'background.default' }}>
+                              <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  Dólar Blue Interior
+                                </Typography>
+                                <Typography variant="body2" fontWeight={600}>
+                                  Compra ${finanzasArgy.blueInterior.compra.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Venta ${finanzasArgy.blueInterior.venta.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        </>
+                      ) : (
+                        <Grid size={12}>
+                          <Typography variant="body2" color="text.secondary">
+                            No se pudieron cargar las cotizaciones de FinanzasArgy.
+                          </Typography>
+                        </Grid>
+                      )}
+                    </Grid>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      Valor de referencia.{' '}
+                      <a
+                        href="https://www.finanzasargy.com/cotizaciones-mercado-blue"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: 'inherit', textDecoration: 'underline' }}
+                      >
+                        finanzasargy.com/cotizaciones-mercado-blue
+                      </a>
+                    </Typography>
+                  </Box>
                 </Box>
               ) : loading && !marketRates ? (
                 <Skeleton height={60} />
@@ -680,7 +752,7 @@ export const DashboardPage: React.FC = () => {
                   width: 400,
                   maxWidth: '100%',
                   mx: 'auto',
-                  borderRadius: 3,
+                  borderRadius: 0,
                   overflow: 'hidden',
                   boxShadow: 4,
                   background: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%)',
