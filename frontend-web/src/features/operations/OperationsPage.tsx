@@ -27,6 +27,9 @@ type OperationFormState = {
   amount: string;
   employeeName: string;
   paymentMethod: CreateOperationPayload['paymentMethod'];
+  // Optional second payment method for split payments (e.g. half cash, half transfer)
+  paymentMethod2: CreateOperationPayload['paymentMethod'] | '';
+  splitPercentFirst: string; // percentage for primary method (0-100)
   surchargePercent: string;
 };
 
@@ -56,6 +59,8 @@ export const OperationsPage: React.FC = () => {
     amount: '',
     employeeName: '',
     paymentMethod: 'Efectivo',
+    paymentMethod2: '',
+    splitPercentFirst: '50',
     surchargePercent: ''
   });
 
@@ -190,7 +195,7 @@ export const OperationsPage: React.FC = () => {
     if (Number.isNaN(rateNum) || rateNum <= 0) return null;
 
     const surchargeNum =
-      form.paymentMethod === 'Transferencia' && form.surchargePercent
+      (form.paymentMethod === 'Transferencia' || form.paymentMethod === 'Mixto') && form.surchargePercent
         ? Number(form.surchargePercent)
         : 0;
     if (Number.isNaN(surchargeNum) || surchargeNum <= 0) {
@@ -228,7 +233,7 @@ export const OperationsPage: React.FC = () => {
     const rateNum = Number(form.rate);
     const amountNum = Number(form.amount);
     const surchargeNum =
-      form.paymentMethod === 'Transferencia' && form.surchargePercent
+      (form.paymentMethod === 'Transferencia' || form.paymentMethod === 'Mixto') && form.surchargePercent
         ? Number(form.surchargePercent)
         : 0;
 
@@ -255,6 +260,17 @@ export const OperationsPage: React.FC = () => {
     setSubmitting(true);
     setSubmitError(null);
     try {
+      const isSplit = form.paymentMethod === 'Mixto' && form.paymentMethod2;
+      const splitPercent = Math.min(
+        100,
+        Math.max(0, Number(form.splitPercentFirst || '50'))
+      );
+      const secondPercent = isSplit ? 100 - splitPercent : 0;
+
+      const splitLabel = isSplit
+        ? `${form.paymentMethod} ${splitPercent.toFixed(0)}% / ${form.paymentMethod2} ${secondPercent.toFixed(0)}%`
+        : undefined;
+
       const payload: CreateOperationPayload = {
         type: form.type,
         clientName: form.clientName.trim(),
@@ -263,6 +279,7 @@ export const OperationsPage: React.FC = () => {
         amount: amountNum,
         employeeName: form.employeeName.trim(),
         paymentMethod: form.paymentMethod,
+        paymentSplit: splitLabel,
         surchargePercent: surchargeNum,
         totalARS: totalARSNum
       };
@@ -276,6 +293,8 @@ export const OperationsPage: React.FC = () => {
         amount: '',
         employeeName: '',
         paymentMethod: 'Efectivo',
+        paymentMethod2: '',
+        splitPercentFirst: '50',
         surchargePercent: ''
       }));
       await loadOperations();
@@ -374,7 +393,7 @@ export const OperationsPage: React.FC = () => {
 
                   <TextField
                     select
-                    label="Payment method"
+                    label="Payment method (primary)"
                     size="small"
                     value={form.paymentMethod}
                     onChange={handleChange('paymentMethod')}
@@ -382,9 +401,37 @@ export const OperationsPage: React.FC = () => {
                   >
                     <MenuItem value="Efectivo">Efectivo</MenuItem>
                     <MenuItem value="Transferencia">Transferencia</MenuItem>
+                    <MenuItem value="Mixto">Mixto (dos medios)</MenuItem>
                   </TextField>
 
-                  {form.paymentMethod === 'Transferencia' && (
+                  {form.paymentMethod === 'Mixto' && (
+                    <Stack direction="row" spacing={1.5}>
+                      <TextField
+                        select
+                        label="2º medio de pago"
+                        size="small"
+                        value={form.paymentMethod2}
+                        onChange={handleChange('paymentMethod2')}
+                        sx={{ minWidth: 160 }}
+                      >
+                        <MenuItem value="">Seleccionar…</MenuItem>
+                        <MenuItem value="Efectivo">Efectivo</MenuItem>
+                        <MenuItem value="Transferencia">Transferencia</MenuItem>
+                      </TextField>
+                      <TextField
+                        label="% primer medio"
+                        type="number"
+                        size="small"
+                        value={form.splitPercentFirst}
+                        onChange={handleChange('splitPercentFirst')}
+                        sx={{ minWidth: 120 }}
+                        inputProps={{ min: 0, max: 100, step: 1 }}
+                        helperText="Ej: 50 = mitad y mitad"
+                      />
+                    </Stack>
+                  )}
+
+                  {(form.paymentMethod === 'Transferencia' || form.paymentMethod === 'Mixto') && (
                     <TextField
                       label="Surcharge %"
                       type="number"

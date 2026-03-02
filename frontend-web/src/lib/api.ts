@@ -66,7 +66,8 @@ export interface Operation {
   amount: number;
   totalARS: number;
   employeeName: string;
-  paymentMethod: 'Efectivo' | 'Transferencia';
+  paymentMethod: 'Efectivo' | 'Transferencia' | 'Mixto';
+  paymentSplit?: string;
   surchargePercent: number;
   adjustedRate: number;
   createdAt: string;
@@ -93,7 +94,8 @@ export interface CreateOperationPayload {
   rate: number;
   amount: number;
   employeeName: string;
-  paymentMethod: 'Efectivo' | 'Transferencia';
+  paymentMethod: 'Efectivo' | 'Transferencia' | 'Mixto';
+  paymentSplit?: string;
   surchargePercent?: number;
   totalARS?: number;
 }
@@ -153,7 +155,7 @@ export const fetchExchangeOperations = async (): Promise<ExchangeOperation[]> =>
     amountFrom: Number(op.amount) || 0,
     rateApplied: Number(op.rate) || 0,
     totalARS: Number(op.totalARS) ?? 0,
-    branch: 'Casa Central',
+    branch: op.paymentMethod === 'Mixto' && op.paymentSplit ? op.paymentSplit : 'Casa Central',
     teller: op.employeeName ?? ''
   }));
 };

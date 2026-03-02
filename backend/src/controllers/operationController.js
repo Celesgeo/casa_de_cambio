@@ -54,16 +54,22 @@ const createOperation = async (req, res, next) => {
       surchargePercent != null && surchargePercent !== ''
         ? Math.max(0, Number(surchargePercent))
         : 0;
-    const payment = paymentMethod && ['Efectivo', 'Transferencia'].includes(paymentMethod)
+    const payment = paymentMethod && ['Efectivo', 'Transferencia', 'Mixto'].includes(paymentMethod)
       ? paymentMethod
       : 'Efectivo';
 
     // Calcular adjustedRate y totalARS en el servidor (no depender del frontend)
     let adjustedRateNum = rateNum;
-    if (payment === 'Transferencia' && surchargeNum > 0) {
+    // For mixed payments, we conservatively apply the surcharge to the full amount
+    if ((payment === 'Transferencia' || payment === 'Mixto') && surchargeNum > 0) {
       adjustedRateNum = rateNum + (rateNum * surchargeNum / 100);
     }
     const totalARS = Math.round(adjustedRateNum * amountNum * 100) / 100;
+
+    const paymentSplit =
+      payment === 'Mixto' && paymentMethod && req.body.paymentSplit
+        ? String(req.body.paymentSplit).trim()
+        : undefined;
 
     const operationData = {
       type: String(type).trim(),
@@ -75,7 +81,8 @@ const createOperation = async (req, res, next) => {
       paymentMethod: payment,
       surchargePercent: surchargeNum,
       adjustedRate: adjustedRateNum,
-      totalARS
+      totalARS,
+      paymentSplit
     };
 
     const operation = new Operation(operationData);

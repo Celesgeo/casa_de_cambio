@@ -39,7 +39,14 @@ const operationSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['Efectivo', 'Transferencia']
+      enum: ['Efectivo', 'Transferencia', 'Mixto'],
+      default: 'Efectivo'
+    },
+    // Optional human-readable breakdown when there are two methods of payment
+    // e.g. "Efectivo 50% / Transferencia 50%"
+    paymentSplit: {
+      type: String,
+      trim: true
     },
     surchargePercent: {
       type: Number,
