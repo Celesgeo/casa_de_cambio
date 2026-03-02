@@ -96,7 +96,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           pt: 10,
           pb: 4,
           px: { xs: 2, sm: 3, md: 4 },
-          ml: 0,
+          ml: { xs: 0, md: `${drawerWidth}px` },
           transition: 'margin 0.2s ease-out',
           position: 'relative',
           zIndex: 1,
