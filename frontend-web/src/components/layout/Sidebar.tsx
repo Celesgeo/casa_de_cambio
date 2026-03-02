@@ -117,8 +117,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: drawerWidth,
-            marginTop: '64px', // below AppBar
-            height: 'calc(100% - 64px)',
             borderRight: 1,
             borderColor: 'divider'
           }
