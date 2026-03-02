@@ -81,7 +81,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       <Sidebar mobileOpen={mobileOpen} onClose={handleDrawerToggle} />
 
-      {/* Main: sigue patrón oficial de MUI layout con drawer fijo; flexGrow y margin-left para no quedar tapado ni colapsar en pantalla completa */}
+      {/* Main: patrón flex de MUI con drawer fijo.
+          El drawer permanente ya ocupa 240px en el flex; el main sólo necesita
+          flexGrow y minWidth: 0. No usamos margin-left en desktop para evitar
+          que el contenido se desplace o desaparezca al maximizar. */}
       <Box
         component="main"
         role="main"
@@ -93,7 +96,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           pt: 10,
           pb: 4,
           px: { xs: 2, sm: 3, md: 4 },
-          ml: { xs: 0, md: drawerWidth },
+          ml: 0,
           transition: 'margin 0.2s ease-out',
           position: 'relative',
           zIndex: 1,
