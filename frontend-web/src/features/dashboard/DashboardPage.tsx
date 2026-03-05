@@ -755,31 +755,121 @@ export const DashboardPage: React.FC = () => {
                   borderRadius: 0,
                   overflow: 'hidden',
                   boxShadow: 4,
-                  background: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%)',
-                  color: '#fff',
-                  p: 2.5,
-                  border: '1px solid rgba(255,255,255,0.2)'
+                  bgcolor: '#f5f5f5',
+                  color: '#000',
+                  p: 3
                 }}
               >
-                <Typography variant="overline" sx={{ letterSpacing: 2, opacity: 0.9 }}>
-                  Cotización
-                </Typography>
-                <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5, mb: 1.5 }}>
-                  🏛️ GRUPO ALVAREZ
-                </Typography>
-                <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.3)', pt: 1.5, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    USD Compramos: ${formatQuoteNum(quoteCompra)}
+                {/* Header marca GRUPO ALVAREZ */}
+                <Box
+                  sx={{
+                    mb: 2,
+                    px: 3,
+                    py: 1.5,
+                    background: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%)',
+                    color: '#ffffff'
+                  }}
+                >
+                  <Typography variant="overline" sx={{ letterSpacing: 2, opacity: 0.9 }}>
+                    COTIZACIÓN
                   </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    USD Vendemos: ${formatQuoteNum(quoteVenta)}
+                  <Typography variant="h5" fontWeight={700}>
+                    🏛️ GRUPO ALVAREZ
                   </Typography>
                 </Box>
-                <Typography variant="caption" sx={{ display: 'block', mt: 1.5, opacity: 0.85, fontStyle: 'italic' }}>
-                  {quoteUpdatedAt
-                    ? `Actualizado: ${quoteUpdatedAt.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}`
-                    : 'Actualizado al momento'}
-                </Typography>
+
+                {/* Moneda (USD) en recuadro blanco */}
+                <Box sx={{ mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 2.5,
+                      py: 1,
+                      bgcolor: '#ffffff',
+                      color: '#000',
+                      border: '1px solid #ddd',
+                      fontWeight: 700,
+                      fontSize: '1.1rem'
+                    }}
+                  >
+                    USD
+                  </Box>
+                </Box>
+
+                {/* Barras de compra / venta con colores requeridos */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                  <Box
+                    sx={{
+                      bgcolor: '#d32f2f',
+                      color: '#ffffff',
+                      px: 3,
+                      py: 1.4,
+                      textAlign: 'center'
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: { xs: '1.5rem', sm: '1.7rem' },
+                        letterSpacing: 1
+                      }}
+                    >
+                      COMPRAMOS: ${formatQuoteNum(quoteCompra)}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      bgcolor: '#1b5e20',
+                      color: '#ffffff',
+                      px: 3,
+                      py: 1.4,
+                      textAlign: 'center'
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: { xs: '1.5rem', sm: '1.7rem' },
+                        letterSpacing: 1
+                      }}
+                    >
+                      VENDEMOS: ${formatQuoteNum(quoteVenta)}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* Cotización actualizada + fecha/hora */}
+                <Box
+                  sx={{
+                    mt: 2,
+                    textAlign: 'right'
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '0.8rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: 1.5,
+                      opacity: 0.85
+                    }}
+                  >
+                    Cotización actualizada
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
+                    {quoteUpdatedAt
+                      ? quoteUpdatedAt.toLocaleString('es-AR', {
+                          dateStyle: 'short',
+                          timeStyle: 'short'
+                        })
+                      : new Date().toLocaleString('es-AR', {
+                          dateStyle: 'short',
+                          timeStyle: 'short'
+                        })}
+                  </Typography>
+                </Box>
               </Box>
             </CardContent>
           </Card>
