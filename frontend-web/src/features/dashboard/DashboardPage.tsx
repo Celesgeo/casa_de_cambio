@@ -806,7 +806,9 @@ export const DashboardPage: React.FC = () => {
                       color: '#ffffff',
                       px: 3,
                       py: 1.4,
-                      textAlign: 'center'
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center'
                     }}
                   >
                     <Typography
@@ -814,7 +816,8 @@ export const DashboardPage: React.FC = () => {
                         fontWeight: 800,
                         fontSize: { xs: '1.4rem', sm: '1.6rem' },
                         letterSpacing: 1,
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center'
                       }}
                     >
                       COMPRAMOS: ${formatQuoteNum(quoteCompra)}
@@ -826,7 +829,9 @@ export const DashboardPage: React.FC = () => {
                       color: '#ffffff',
                       px: 3,
                       py: 1.4,
-                      textAlign: 'center'
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center'
                     }}
                   >
                     <Typography
@@ -834,7 +839,8 @@ export const DashboardPage: React.FC = () => {
                         fontWeight: 800,
                         fontSize: { xs: '1.4rem', sm: '1.6rem' },
                         letterSpacing: 1,
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center'
                       }}
                     >
                       VENDEMOS: ${formatQuoteNum(quoteVenta)}
