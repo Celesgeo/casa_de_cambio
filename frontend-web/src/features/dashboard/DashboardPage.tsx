@@ -757,7 +757,7 @@ export const DashboardPage: React.FC = () => {
                   boxShadow: 4,
                   bgcolor: '#f5f5f5',
                   color: '#000',
-                  p: 3
+                  p: 2
                 }}
               >
                 {/* Header marca GRUPO ALVAREZ */}
@@ -779,19 +779,19 @@ export const DashboardPage: React.FC = () => {
                 </Box>
 
                 {/* Moneda (USD) en recuadro blanco */}
-                <Box sx={{ mb: 2 }}>
+                <Box sx={{ mb: 1 }}>
                   <Box
                     sx={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      px: 2.5,
-                      py: 1,
+                      px: 1.5,
+                      py: 0.4,
                       bgcolor: '#ffffff',
                       color: '#000',
                       border: '1px solid #ddd',
                       fontWeight: 700,
-                      fontSize: '1.1rem'
+                      fontSize: '0.9rem'
                     }}
                   >
                     USD
@@ -812,8 +812,9 @@ export const DashboardPage: React.FC = () => {
                     <Typography
                       sx={{
                         fontWeight: 800,
-                        fontSize: { xs: '1.5rem', sm: '1.7rem' },
-                        letterSpacing: 1
+                        fontSize: { xs: '1.4rem', sm: '1.6rem' },
+                        letterSpacing: 1,
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       COMPRAMOS: ${formatQuoteNum(quoteCompra)}
@@ -831,8 +832,9 @@ export const DashboardPage: React.FC = () => {
                     <Typography
                       sx={{
                         fontWeight: 800,
-                        fontSize: { xs: '1.5rem', sm: '1.7rem' },
-                        letterSpacing: 1
+                        fontSize: { xs: '1.4rem', sm: '1.6rem' },
+                        letterSpacing: 1,
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       VENDEMOS: ${formatQuoteNum(quoteVenta)}
