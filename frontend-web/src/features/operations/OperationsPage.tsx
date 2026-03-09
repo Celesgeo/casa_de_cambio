@@ -91,7 +91,12 @@ export const OperationsPage: React.FC = () => {
       minWidth: 160,
       valueFormatter(params: { value?: unknown }) {
         const val = params.value;
-        return val != null ? new Date(String(val)).toLocaleString() : '';
+        return val != null
+          ? new Date(String(val)).toLocaleString('es-AR', {
+              dateStyle: 'short',
+              timeStyle: 'short'
+            })
+          : '';
       }
     },
     {

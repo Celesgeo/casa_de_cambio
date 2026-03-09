@@ -138,6 +138,15 @@ export interface WhatsAppQuote {
   venta: number;
 }
 
+export interface DailyBalanceReport {
+  date: string;
+  usdComprados: number;
+  usdVendidos: number;
+  gananciaEstimadaARS: number;
+  totalARSCompras: number;
+  totalARSVentas: number;
+}
+
 // --- Auth ---
 export const login = (email: string, password: string) =>
   api.post<{ token: string; user: { _id: string; name: string; email: string; role: string } }>('/auth/login', { email, password });
@@ -210,3 +219,9 @@ export const fetchClosingCalculation = () =>
 // --- Quote (WhatsApp) ---
 export const fetchWhatsAppQuote = () =>
   api.get<WhatsAppQuote>('/quote/whatsapp').then((r) => r.data);
+
+// --- Reports ---
+export const fetchDailyBalance = (date?: string) =>
+  api
+    .get<DailyBalanceReport>('/reports/daily-balance', date ? { params: { date } } : undefined)
+    .then((r) => r.data);

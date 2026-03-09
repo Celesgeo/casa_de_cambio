@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { OperationsPage } from './features/operations/OperationsPage';
+import { ReportsPage } from './features/reports/ReportsPage';
 import { LoginPage } from './features/auth/LoginPage';
 import { safeStorage } from './lib/storage';
 
@@ -32,7 +33,7 @@ const App: React.FC = () => (
       <Route index element={<DashboardPage />} />
       <Route path="operations" element={<OperationsPage />} />
       <Route path="employees" element={<Placeholder title="Employee management" />} />
-      <Route path="reports" element={<Placeholder title="Reports & cash closing" />} />
+      <Route path="reports" element={<ReportsPage />} />
       <Route path="settings" element={<Placeholder title="System settings" />} />
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />

@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const ratesRoutes = require('./routes/ratesRoutes');
 const closingRoutes = require('./routes/closingRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
+const reportsRoutes = require('./routes/reportsRoutes');
 
 const app = express();
 
@@ -58,6 +59,7 @@ app.use('/api/patrimony', patrimonyRoutes);
 app.use('/api/rates', ratesRoutes);
 app.use('/api/closing', closingRoutes);
 app.use('/api/quote', quoteRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Error handlers
 app.use(notFound);
