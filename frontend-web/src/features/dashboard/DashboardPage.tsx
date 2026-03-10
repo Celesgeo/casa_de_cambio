@@ -5,6 +5,10 @@ import {
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid2 as Grid,
   Skeleton,
   TextField,
@@ -31,6 +35,40 @@ import { safeStorage } from '../../lib/storage';
 const CURRENCIES = ['USD', 'ARS', 'EUR', 'BRL', 'CLP'];
 const COLORS = ['#4C8DFF', '#00E0B8', '#FFB74D', '#EF5350', '#AB47BC'];
 
+/** Temas para la imagen de cotización WhatsApp (el primero es el predeterminado) */
+const QUOTE_THEMES = {
+  default: {
+    name: 'Predeterminado',
+    header: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%)',
+    compra: '#d32f2f',
+    venta: '#1b5e20',
+    bg: '#f5f5f5'
+  },
+  dark: {
+    name: 'Oscuro',
+    header: 'linear-gradient(135deg, #1a237e 0%, #283593 50%, #1a237e 100%)',
+    compra: '#b71c1c',
+    venta: '#004d40',
+    bg: '#e0e0e0'
+  },
+  light: {
+    name: 'Claro',
+    header: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
+    compra: '#e57373',
+    venta: '#66bb6a',
+    bg: '#fafafa'
+  },
+  minimal: {
+    name: 'Minimal',
+    header: 'linear-gradient(135deg, #455a64 0%, #607d8b 50%, #455a64 100%)',
+    compra: '#c62828',
+    venta: '#2e7d32',
+    bg: '#f5f5f5'
+  }
+} as const;
+
+type QuoteThemeId = keyof typeof QUOTE_THEMES;
+
 const mockVolumeSeries = [
   { label: '09:00', value: 12000 },
   { label: '10:00', value: 18000 },
@@ -52,6 +90,10 @@ export const DashboardPage: React.FC = () => {
   const [quoteCompra, setQuoteCompra] = React.useState<number | null>(null);
   const [quoteVenta, setQuoteVenta] = React.useState<number | null>(null);
   const [quoteUpdatedAt, setQuoteUpdatedAt] = React.useState<Date | null>(null);
+  const [quoteCompanyName, setQuoteCompanyName] = React.useState('GRUPO ALVAREZ');
+  const [quoteThemeId, setQuoteThemeId] = React.useState<QuoteThemeId>('default');
+  const [quoteNameDialogOpen, setQuoteNameDialogOpen] = React.useState(false);
+  const [quoteNameEdit, setQuoteNameEdit] = React.useState('');
   const quoteCardRef = React.useRef<HTMLDivElement>(null);
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
@@ -718,7 +760,57 @@ export const DashboardPage: React.FC = () => {
                 <Button variant="outlined" onClick={handleCopyQuoteImage} disabled={quoteCompra == null && quoteVenta == null}>
                   Copiar imagen
                 </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setQuoteNameEdit(quoteCompanyName);
+                    setQuoteNameDialogOpen(true);
+                  }}
+                >
+                  Editar nombre
+                </Button>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>
+                    Estilos:
+                  </Typography>
+                  {(Object.keys(QUOTE_THEMES) as QuoteThemeId[]).map((id) => (
+                    <Button
+                      key={id}
+                      size="small"
+                      variant={quoteThemeId === id ? 'contained' : 'outlined'}
+                      onClick={() => setQuoteThemeId(id)}
+                      sx={{ minWidth: 0, px: 1 }}
+                    >
+                      {QUOTE_THEMES[id].name}
+                    </Button>
+                  ))}
+                </Box>
               </Box>
+              <Dialog open={quoteNameDialogOpen} onClose={() => setQuoteNameDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Nombre en la imagen</DialogTitle>
+                <DialogContent>
+                  <TextField
+                    autoFocus
+                    fullWidth
+                    label="Nombre de la empresa"
+                    value={quoteNameEdit}
+                    onChange={(e) => setQuoteNameEdit(e.target.value)}
+                    sx={{ mt: 1 }}
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setQuoteNameDialogOpen(false)}>Cancelar</Button>
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      if (quoteNameEdit.trim()) setQuoteCompanyName(quoteNameEdit.trim());
+                      setQuoteNameDialogOpen(false);
+                    }}
+                  >
+                    Guardar
+                  </Button>
+                </DialogActions>
+              </Dialog>
               <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                 <TextField
                   size="small"
@@ -755,18 +847,18 @@ export const DashboardPage: React.FC = () => {
                   borderRadius: 0,
                   overflow: 'hidden',
                   boxShadow: 4,
-                  bgcolor: '#f5f5f5',
+                  bgcolor: QUOTE_THEMES[quoteThemeId].bg,
                   color: '#000',
                   p: 2
                 }}
               >
-                {/* Header marca GRUPO ALVAREZ */}
+                {/* Header marca (nombre editable) */}
                 <Box
                   sx={{
                     mb: 2,
                     px: 3,
                     py: 1.5,
-                    background: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%)',
+                    background: QUOTE_THEMES[quoteThemeId].header,
                     color: '#ffffff'
                   }}
                 >
@@ -774,7 +866,7 @@ export const DashboardPage: React.FC = () => {
                     COTIZACIÓN
                   </Typography>
                   <Typography variant="h5" fontWeight={700}>
-                    🏛️ GRUPO ALVAREZ
+                    🏛️ {quoteCompanyName || 'GRUPO ALVAREZ'}
                   </Typography>
                 </Box>
 
@@ -798,11 +890,11 @@ export const DashboardPage: React.FC = () => {
                   </Box>
                 </Box>
 
-                {/* Barras de compra / venta con colores requeridos */}
+                {/* Barras de compra / venta (colores según tema) */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
                   <Box
                     sx={{
-                      bgcolor: '#d32f2f',
+                      bgcolor: QUOTE_THEMES[quoteThemeId].compra,
                       color: '#ffffff',
                       px: 3,
                       py: 1.4,
@@ -825,7 +917,7 @@ export const DashboardPage: React.FC = () => {
                   </Box>
                   <Box
                     sx={{
-                      bgcolor: '#1b5e20',
+                      bgcolor: QUOTE_THEMES[quoteThemeId].venta,
                       color: '#ffffff',
                       px: 3,
                       py: 1.4,
