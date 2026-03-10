@@ -6,8 +6,8 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const Company = require('../models/Company');
-const User = require('../models/User');
+const Company = require('../src/models/Company');
+const User = require('../src/models/User');
 
 const DEMO_COMPANY = { name: 'Demo Exchange', plan: 'demo', isActive: true };
 const DEMO_USER = {
@@ -25,8 +25,8 @@ async function seedDemo() {
   const cid = company._id;
 
   // Migrate orphan documents (legacy data without companyId) to demo company
-  const Operation = require('../models/Operation');
-  const Patrimony = require('../models/Patrimony');
+  const Operation = require('../src/models/Operation');
+  const Patrimony = require('../src/models/Patrimony');
   await User.updateMany({ companyId: { $exists: false } }, { $set: { companyId: cid } }).catch(() => {});
   await Operation.updateMany({ companyId: { $exists: false } }, { $set: { companyId: cid } }).catch(() => {});
   await Patrimony.updateMany({ companyId: { $exists: false } }, { $set: { companyId: cid } }).catch(() => {});
