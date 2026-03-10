@@ -67,7 +67,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             variant="h6"
             sx={{ flexGrow: 1, fontWeight: 600, color: 'text.primary' }}
           >
-            GRUPO ALVAREZ EXCHANGE
+            Exchange Manager
           </Typography>
           <Divider orientation="vertical" flexItem sx={{ mx: 2, opacity: 0.2 }} />
           <IconButton color="inherit" onClick={toggleMode} title="Cambiar tema">

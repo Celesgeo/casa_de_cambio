@@ -10,6 +10,9 @@ const ratesRoutes = require('./routes/ratesRoutes');
 const closingRoutes = require('./routes/closingRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
+const userRoutes = require('./routes/userRoutes');
+const { summary } = require('./controllers/dashboardController');
+const { protect } = require('./middleware/authMiddleware');
 
 const app = express();
 
@@ -36,21 +39,13 @@ app.use(
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'GRUPO ALVAREZ EXCHANGE SYSTEM',
+    service: 'Exchange Manager',
     timestamp: new Date().toISOString()
   });
 });
 
-// Example dashboard summary endpoint (stub data for now)
-app.get('/api/dashboard/summary', (req, res) => {
-  res.json({
-    totalDailyVolume: 125000.5,
-    totalPatrimony: 1850000.75,
-    spreadAverage: 0.032,
-    operationsToday: 87,
-    cashOnHand: 45230.25
-  });
-});
+// Dashboard summary - requires auth, real data per company
+app.get('/api/dashboard/summary', protect, summary);
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -60,6 +55,7 @@ app.use('/api/rates', ratesRoutes);
 app.use('/api/closing', closingRoutes);
 app.use('/api/quote', quoteRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handlers
 app.use(notFound);

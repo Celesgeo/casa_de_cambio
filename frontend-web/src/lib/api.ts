@@ -225,3 +225,20 @@ export const fetchDailyBalance = (date?: string) =>
   api
     .get<DailyBalanceReport>('/reports/daily-balance', date ? { params: { date } } : undefined)
     .then((r) => r.data);
+
+// --- Users (Employees) ---
+export interface UserItem {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+}
+
+export const fetchUsers = () => api.get<UserItem[]>('/users').then((r) => r.data);
+
+export const createUser = (data: { name: string; email: string; password: string; role?: string }) =>
+  api.post<UserItem>('/users', data).then((r) => r.data);
+
+export const updateUserActive = (id: string, isActive: boolean) =>
+  api.patch<UserItem>(`/users/${id}`, { isActive }).then((r) => r.data);

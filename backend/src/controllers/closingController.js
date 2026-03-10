@@ -1,14 +1,16 @@
 const Operation = require('../models/Operation');
 const Patrimony = require('../models/Patrimony');
 
-// @route GET /api/closing/calculate
+// @route GET /api/closing/calculate - multi-tenant
 exports.calculate = async (req, res, next) => {
   try {
-    const patrimony = await Patrimony.find({}).lean();
+    const companyId = req.user?.companyId;
+    if (!companyId) return res.status(401).json({ message: 'Unauthorized: company context required' });
+    const patrimony = await Patrimony.find({ companyId }).lean();
     const byCurrency = {};
     patrimony.forEach((p) => { byCurrency[p.currency] = p.amount; });
 
-    const operations = await Operation.find({}).sort({ createdAt: 1 }).lean();
+    const operations = await Operation.find({ companyId }).sort({ createdAt: 1 }).lean();
     let totalBuysARS = 0;
     let totalSalesARS = 0;
     operations.forEach((op) => {

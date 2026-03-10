@@ -2,11 +2,17 @@ require('dotenv').config();
 const http = require('http');
 const app = require('./app');
 const connectDB = require('./config/db');
+const { seedDemo } = require('./scripts/seedDemo');
 
 const PORT = process.env.PORT || 4000;
 
 const startServer = async () => {
   await connectDB();
+  try {
+    await seedDemo();
+  } catch (err) {
+    console.error('[startup] seedDemo error:', err.message);
+  }
 
   const server = http.createServer(app);
 

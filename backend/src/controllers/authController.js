@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
-const generateToken = (id, role) =>
-  jwt.sign({ id, role }, process.env.JWT_SECRET || 'Alvarez2026', { expiresIn: '7d' });
+const generateToken = (userId, companyId, role) =>
+  jwt.sign({ userId, companyId: String(companyId), role }, process.env.JWT_SECRET || 'Alvarez2026', { expiresIn: '7d' });
 
 // @route POST /api/auth/register
 exports.register = async (req, res, next) => {
@@ -12,18 +12,21 @@ exports.register = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email and password required' });
     }
-    const exists = await User.findOne({ email: email.toLowerCase() });
+    const companyId = req.body.companyId;
+    if (!companyId) return res.status(400).json({ message: 'companyId required' });
+    const exists = await User.findOne({ companyId, email: email.toLowerCase() });
     if (exists) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({
+      companyId,
       name,
       email: email.toLowerCase(),
       password: hashed,
       role: role || 'teller'
     });
-    const token = generateToken(user._id, user.role);
+    const token = generateToken(user._id, user.companyId, user.role);
     return res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -56,7 +59,7 @@ exports.login = async (req, res, next) => {
     }
     
     const emailLower = email.toLowerCase();
-    const user = await User.findOne({ email: emailLower }).select('+password');
+    const user = await User.findOne({ email: emailLower }).select('+password').populate('companyId');
     
     if (!user) {
       console.log('[LOGIN] User not found:', emailLower);
@@ -75,8 +78,8 @@ exports.login = async (req, res, next) => {
       console.log('[LOGIN] Password mismatch for:', emailLower);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-    
-    const token = generateToken(user._id, user.role);
+    const cid = user.companyId?._id ?? user.companyId;
+    const token = generateToken(user._id, cid, user.role);
     console.log('[LOGIN] Success for:', emailLower);
     
     return res.json({

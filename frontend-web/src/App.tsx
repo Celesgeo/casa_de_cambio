@@ -4,6 +4,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { OperationsPage } from './features/operations/OperationsPage';
 import { ReportsPage } from './features/reports/ReportsPage';
+import { EmployeesPage } from './features/employees/EmployeesPage';
 import { LoginPage } from './features/auth/LoginPage';
 import { safeStorage } from './lib/storage';
 
@@ -32,7 +33,7 @@ const App: React.FC = () => (
     <Route path="/" element={<ProtectedLayout />}>
       <Route index element={<DashboardPage />} />
       <Route path="operations" element={<OperationsPage />} />
-      <Route path="employees" element={<Placeholder title="Employee management" />} />
+      <Route path="employees" element={<EmployeesPage />} />
       <Route path="reports" element={<ReportsPage />} />
       <Route path="settings" element={<Placeholder title="System settings" />} />
     </Route>

@@ -35,7 +35,10 @@ exports.getDailyBalance = async (req, res, next) => {
     const dayStart = startOfDayUTC(new Date(Date.UTC(y, m - 1, d)));
     const dayEnd = endOfDayUTC(dayStart);
 
+    const companyId = req.user?.companyId;
+    if (!companyId) return res.status(401).json({ message: 'Unauthorized: company context required' });
     const operations = await Operation.find({
+      companyId,
       createdAt: { $gte: dayStart, $lt: dayEnd }
     }).lean();
 

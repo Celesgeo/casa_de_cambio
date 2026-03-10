@@ -2,10 +2,14 @@ const mongoose = require('mongoose');
 
 const patrimonySchema = new mongoose.Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: true
+    },
     currency: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       uppercase: true,
       enum: ['USD', 'ARS', 'EUR', 'BRL', 'CLP']
@@ -22,6 +26,8 @@ const patrimonySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+patrimonySchema.index({ companyId: 1, currency: 1 }, { unique: true });
 
 // Update lastUpdated on save
 patrimonySchema.pre('save', function (next) {

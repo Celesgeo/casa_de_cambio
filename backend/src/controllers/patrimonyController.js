@@ -2,10 +2,12 @@ const Patrimony = require('../models/Patrimony');
 
 const CURRENCIES = ['USD', 'ARS', 'EUR', 'BRL', 'CLP'];
 
-// @route GET /api/patrimony
+// @route GET /api/patrimony - multi-tenant
 exports.getPatrimony = async (req, res, next) => {
   try {
-    const items = await Patrimony.find({ currency: { $in: CURRENCIES } }).sort({ currency: 1 });
+    const companyId = req.user?.companyId;
+    if (!companyId) return res.status(401).json({ message: 'Unauthorized: company context required' });
+    const items = await Patrimony.find({ companyId, currency: { $in: CURRENCIES } }).sort({ currency: 1 });
     const byCurrency = {};
     CURRENCIES.forEach((c) => { byCurrency[c] = { currency: c, amount: 0, lastUpdated: null }; });
     items.forEach((item) => {
@@ -22,9 +24,11 @@ exports.getPatrimony = async (req, res, next) => {
   }
 };
 
-// @route PUT /api/patrimony
+// @route PUT /api/patrimony - multi-tenant
 exports.updatePatrimony = async (req, res, next) => {
   try {
+    const companyId = req.user?.companyId;
+    if (!companyId) return res.status(401).json({ message: 'Unauthorized: company context required' });
     const { currency, amount } = req.body;
     if (!currency || !CURRENCIES.includes(String(currency).toUpperCase())) {
       return res.status(400).json({ message: 'Valid currency required (USD, ARS, EUR, BRL, CLP)' });
@@ -35,7 +39,7 @@ exports.updatePatrimony = async (req, res, next) => {
     }
     const c = String(currency).toUpperCase();
     const doc = await Patrimony.findOneAndUpdate(
-      { currency: c },
+      { companyId, currency: c },
       { amount: num, lastUpdated: new Date() },
       { new: true, upsert: true }
     );
@@ -46,9 +50,11 @@ exports.updatePatrimony = async (req, res, next) => {
   }
 };
 
-// @route POST /api/patrimony/init
+// @route POST /api/patrimony/init - multi-tenant
 exports.initPatrimony = async (req, res, next) => {
   try {
+    const companyId = req.user?.companyId;
+    if (!companyId) return res.status(401).json({ message: 'Unauthorized: company context required' });
     const entries = req.body; // [{ currency, amount }, ...]
     if (!Array.isArray(entries)) {
       return res.status(400).json({ message: 'Body must be an array of { currency, amount }' });
@@ -60,7 +66,7 @@ exports.initPatrimony = async (req, res, next) => {
       const num = Math.max(0, Number(e.amount));
       if (Number.isNaN(num)) continue;
       const doc = await Patrimony.findOneAndUpdate(
-        { currency: c },
+        { companyId, currency: c },
         { amount: num, lastUpdated: new Date() },
         { new: true, upsert: true }
       );

@@ -85,10 +85,10 @@ export const LoginPage: React.FC = () => {
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
             <Typography variant="h4" fontWeight={700} gutterBottom sx={{ color: 'primary.main' }}>
-              🏛️ GRUPO ALVAREZ
+              Exchange Manager
             </Typography>
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              EXCHANGE SYSTEM
+              Sistema de casas de cambio
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               Iniciar sesión para continuar

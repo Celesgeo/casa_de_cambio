@@ -2,7 +2,7 @@
   "name": "grupo-alvarez-exchange-frontend-web",
   "version": "1.0.0",
   "private": true,
-  "description": "Fintech dashboard web frontend for GRUPO ALVAREZ EXCHANGE SYSTEM, built with React, Vite, and TypeScript.",
+  "description": "Fintech dashboard web frontend for Exchange Manager, built with React, Vite, and TypeScript.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

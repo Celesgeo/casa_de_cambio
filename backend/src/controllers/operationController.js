@@ -71,7 +71,11 @@ const createOperation = async (req, res, next) => {
         ? String(req.body.paymentSplit).trim()
         : undefined;
 
+    const companyId = req.user?.companyId;
+    if (!companyId) return res.status(401).json({ message: 'Unauthorized: company context required' });
+
     const operationData = {
+      companyId,
       type: String(type).trim(),
       clientName: String(clientName).trim(),
       currency: String(currency).trim(),
@@ -94,9 +98,9 @@ const createOperation = async (req, res, next) => {
     const fxCurrency = String(saved.currency).toUpperCase();
     const fxAmount = saved.amount;
     try {
-      const updatePatrimony = async (currency, delta) => {
+      const updatePatrimony = async (curr, delta) => {
         await Patrimony.findOneAndUpdate(
-          { currency },
+          { companyId, currency: curr },
           { $inc: { amount: delta }, $set: { lastUpdated: new Date() } },
           { upsert: true, new: true }
         );
@@ -120,12 +124,14 @@ const createOperation = async (req, res, next) => {
   }
 };
 
-// @desc    Get all operations (newest first)
+// @desc    Get all operations (newest first) - multi-tenant
 // @route   GET /api/operations
 // @access  Private (to be protected with auth middleware)
 const getOperations = async (req, res, next) => {
   try {
-    const operations = await Operation.find().sort({ createdAt: -1 });
+    const companyId = req.user?.companyId;
+    if (!companyId) return res.status(401).json({ message: 'Unauthorized: company context required' });
+    const operations = await Operation.find({ companyId }).sort({ createdAt: -1 });
     return res.json(operations);
   } catch (error) {
     console.error('Error fetching operations:', error);
@@ -133,12 +139,14 @@ const getOperations = async (req, res, next) => {
   }
 };
 
-// @desc    Delete all operations
+// @desc    Delete all operations - multi-tenant (only own company)
 // @route   DELETE /api/operations
 // @access  Private
 const deleteAllOperations = async (req, res, next) => {
   try {
-    const result = await Operation.deleteMany({});
+    const companyId = req.user?.companyId;
+    if (!companyId) return res.status(401).json({ message: 'Unauthorized: company context required' });
+    const result = await Operation.deleteMany({ companyId });
     console.log('Operations deleted:', result.deletedCount);
     return res.json({ message: 'Operations deleted', deletedCount: result.deletedCount });
   } catch (error) {

@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const operationSchema = new mongoose.Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: true
+    },
     type: {
       type: String,
       enum: ['Compra', 'Venta'],

@@ -17,7 +17,11 @@ const protect = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'Alvarez2026');
-    req.user = { id: decoded.id, role: decoded.role };
+    req.user = {
+      userId: decoded.userId ?? decoded.id,
+      companyId: decoded.companyId,
+      role: decoded.role
+    };
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Not authorized, token failed' });
