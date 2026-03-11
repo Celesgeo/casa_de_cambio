@@ -31,6 +31,16 @@ async function seedDemo() {
   await Operation.updateMany({ companyId: { $exists: false } }, { $set: { companyId: cid } }).catch(() => {});
   await Patrimony.updateMany({ companyId: { $exists: false } }, { $set: { companyId: cid } }).catch(() => {});
 
+  // Patrimonio inicial en 0 para la demo (así la gestión de patrimonio carga datos)
+  const CURRENCIES = ['USD', 'ARS', 'EUR', 'BRL', 'CLP'];
+  for (const currency of CURRENCIES) {
+    await Patrimony.findOneAndUpdate(
+      { companyId: cid, currency },
+      { amount: 0, lastUpdated: new Date() },
+      { new: true, upsert: true }
+    );
+  }
+
   const hashed = await bcrypt.hash(DEMO_USER.password, 10);
   const existingDemo = await User.findOne({ email: DEMO_USER.email });
   if (existingDemo) {

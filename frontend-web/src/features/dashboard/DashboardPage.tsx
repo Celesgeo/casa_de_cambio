@@ -40,30 +40,62 @@ const QUOTE_THEMES = {
   default: {
     name: 'Predeterminado',
     header: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%)',
+    headerText: '#ffffff',
     compra: '#d32f2f',
+    compraText: '#ffffff',
     venta: '#1b5e20',
-    bg: '#f5f5f5'
+    ventaText: '#ffffff',
+    bg: '#f5f5f5',
+    cardColor: '#000',
+    usdBg: '#ffffff',
+    usdColor: '#000',
+    usdBorder: '#ddd',
+    timestampColor: 'rgba(0,0,0,0.65)'
   },
   dark: {
     name: 'Oscuro',
-    header: 'linear-gradient(135deg, #1a237e 0%, #283593 50%, #1a237e 100%)',
-    compra: '#b71c1c',
-    venta: '#004d40',
-    bg: '#e0e0e0'
+    header: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%)',
+    headerText: '#ffffff',
+    compra: '#1565c0',
+    compraText: '#ffffff',
+    venta: '#0d47a1',
+    ventaText: '#ffffff',
+    bg: '#e8eaf6',
+    cardColor: '#000',
+    usdBg: '#ffffff',
+    usdColor: '#000',
+    usdBorder: '#ddd',
+    timestampColor: 'rgba(0,0,0,0.65)'
   },
   light: {
     name: 'Claro',
     header: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
-    compra: '#e57373',
-    venta: '#66bb6a',
-    bg: '#fafafa'
+    headerText: '#ffffff',
+    compra: '#ffffff',
+    compraText: '#b71c1c',
+    venta: '#ffffff',
+    ventaText: '#1b5e20',
+    bg: '#fafafa',
+    cardColor: '#000',
+    usdBg: '#ffffff',
+    usdColor: '#000',
+    usdBorder: '#ddd',
+    timestampColor: 'rgba(0,0,0,0.65)'
   },
   minimal: {
     name: 'Minimal',
-    header: 'linear-gradient(135deg, #455a64 0%, #607d8b 50%, #455a64 100%)',
-    compra: '#c62828',
-    venta: '#2e7d32',
-    bg: '#f5f5f5'
+    header: '#0a0a0a',
+    headerText: '#d4af37',
+    compra: '#0a0a0a',
+    compraText: '#d4af37',
+    venta: '#0a0a0a',
+    ventaText: '#d4af37',
+    bg: '#0a0a0a',
+    cardColor: '#d4af37',
+    usdBg: '#1a1a1a',
+    usdColor: '#d4af37',
+    usdBorder: '#3d3d3d',
+    timestampColor: 'rgba(212,175,55,0.85)'
   }
 } as const;
 
@@ -848,7 +880,7 @@ export const DashboardPage: React.FC = () => {
                   overflow: 'hidden',
                   boxShadow: 4,
                   bgcolor: QUOTE_THEMES[quoteThemeId].bg,
-                  color: '#000',
+                  color: QUOTE_THEMES[quoteThemeId].cardColor,
                   p: 2
                 }}
               >
@@ -859,7 +891,7 @@ export const DashboardPage: React.FC = () => {
                     px: 3,
                     py: 1.5,
                     background: QUOTE_THEMES[quoteThemeId].header,
-                    color: '#ffffff'
+                    color: QUOTE_THEMES[quoteThemeId].headerText
                   }}
                 >
                   <Typography variant="overline" sx={{ letterSpacing: 2, opacity: 0.9 }}>
@@ -870,7 +902,7 @@ export const DashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
 
-                {/* Moneda (USD) en recuadro blanco */}
+                {/* Moneda (USD) */}
                 <Box sx={{ mb: 1 }}>
                   <Box
                     sx={{
@@ -879,9 +911,9 @@ export const DashboardPage: React.FC = () => {
                       justifyContent: 'center',
                       px: 1.5,
                       py: 0.4,
-                      bgcolor: '#ffffff',
-                      color: '#000',
-                      border: '1px solid #ddd',
+                      bgcolor: QUOTE_THEMES[quoteThemeId].usdBg,
+                      color: QUOTE_THEMES[quoteThemeId].usdColor,
+                      border: `1px solid ${QUOTE_THEMES[quoteThemeId].usdBorder}`,
                       fontWeight: 700,
                       fontSize: '0.9rem'
                     }}
@@ -895,7 +927,7 @@ export const DashboardPage: React.FC = () => {
                   <Box
                     sx={{
                       bgcolor: QUOTE_THEMES[quoteThemeId].compra,
-                      color: '#ffffff',
+                      color: QUOTE_THEMES[quoteThemeId].compraText,
                       px: 3,
                       py: 1.4,
                       display: 'flex',
@@ -918,7 +950,7 @@ export const DashboardPage: React.FC = () => {
                   <Box
                     sx={{
                       bgcolor: QUOTE_THEMES[quoteThemeId].venta,
-                      color: '#ffffff',
+                      color: QUOTE_THEMES[quoteThemeId].ventaText,
                       px: 3,
                       py: 1.4,
                       display: 'flex',
@@ -944,7 +976,8 @@ export const DashboardPage: React.FC = () => {
                 <Box
                   sx={{
                     mt: 2,
-                    textAlign: 'right'
+                    textAlign: 'right',
+                    color: QUOTE_THEMES[quoteThemeId].timestampColor
                   }}
                 >
                   <Typography
@@ -953,12 +986,12 @@ export const DashboardPage: React.FC = () => {
                       fontSize: '0.8rem',
                       textTransform: 'uppercase',
                       letterSpacing: 1.5,
-                      opacity: 0.85
+                      opacity: 0.9
                     }}
                   >
                     Cotización actualizada
                   </Typography>
-                  <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
+                  <Typography variant="caption" sx={{ display: 'block', opacity: 0.9 }}>
                     {quoteUpdatedAt
                       ? quoteUpdatedAt.toLocaleString('es-AR', {
                           dateStyle: 'short',
