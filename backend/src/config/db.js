@@ -17,6 +17,13 @@ const connectDB = async () => {
   try {
     await mongoose.connect(uri, options);
     console.log('MongoDB connected');
+    // Quitar índice obsoleto que provoca E11000 (único por currency sin companyId)
+    try {
+      await mongoose.connection.db.collection('patrimonies').dropIndex('currency_1');
+      console.log('MongoDB: dropped obsolete patrimonies index currency_1');
+    } catch (e) {
+      if (e.code !== 27 && e.message?.indexOf('index not found') === -1) console.warn('Patrimonies index drop:', e.message);
+    }
   } catch (error) {
     console.error('MongoDB connection error:', error.message);
     if (error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED')) {

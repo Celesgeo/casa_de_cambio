@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Company = require('../models/Company');
 
 const generateToken = (userId, companyId, role) =>
   jwt.sign({ userId, companyId: String(companyId), role }, process.env.JWT_SECRET || 'Alvarez2026', { expiresIn: '7d' });
@@ -59,7 +60,7 @@ exports.login = async (req, res, next) => {
     }
     
     const emailLower = email.toLowerCase();
-    const user = await User.findOne({ email: emailLower }).select('+password').populate('companyId');
+    let user = await User.findOne({ email: emailLower }).select('+password').populate('companyId');
     
     if (!user) {
       console.log('[LOGIN] User not found:', emailLower);
@@ -71,6 +72,17 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ message: 'User account is inactive' });
     }
     
+    // Si el usuario no tiene companyId (ej. creado con seed antiguo), asignar GRUPO ALVAREZ
+    let cid = user.companyId?._id ?? user.companyId;
+    if (!cid) {
+      let company = await Company.findOne({ name: 'GRUPO ALVAREZ' });
+      if (!company) company = await Company.create({ name: 'GRUPO ALVAREZ', plan: 'standard', isActive: true });
+      await User.updateOne({ _id: user._id }, { $set: { companyId: company._id } });
+      cid = company._id;
+      user.companyId = company;
+      console.log('[LOGIN] Assigned company GRUPO ALVAREZ to user:', emailLower);
+    }
+    
     console.log('[LOGIN] User found:', { email: user.email, name: user.name });
     
     const match = await bcrypt.compare(password, user.password);
@@ -78,7 +90,6 @@ exports.login = async (req, res, next) => {
       console.log('[LOGIN] Password mismatch for:', emailLower);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-    const cid = user.companyId?._id ?? user.companyId;
     const token = generateToken(user._id, cid, user.role);
     console.log('[LOGIN] Success for:', emailLower);
     

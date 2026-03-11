@@ -10,14 +10,20 @@ exports.getPatrimony = async (req, res, next) => {
     let items = await Patrimony.find({ companyId, currency: { $in: CURRENCIES } }).sort({ currency: 1 });
     // Si la compañía no tiene ningún registro de patrimonio, crear filas en 0 (ej. cuenta demo)
     if (items.length === 0) {
-      for (const c of CURRENCIES) {
-        await Patrimony.findOneAndUpdate(
-          { companyId, currency: c },
-          { amount: 0, lastUpdated: new Date() },
-          { new: true, upsert: true }
-        );
+      try {
+        for (const c of CURRENCIES) {
+          await Patrimony.findOneAndUpdate(
+            { companyId, currency: c },
+            { amount: 0, lastUpdated: new Date() },
+            { new: true, upsert: true }
+          );
+        }
+        items = await Patrimony.find({ companyId, currency: { $in: CURRENCIES } }).sort({ currency: 1 });
+      } catch (initErr) {
+        if (initErr.code === 11000) {
+          items = [];
+        } else throw initErr;
       }
-      items = await Patrimony.find({ companyId, currency: { $in: CURRENCIES } }).sort({ currency: 1 });
     }
     const byCurrency = {};
     CURRENCIES.forEach((c) => { byCurrency[c] = { currency: c, amount: 0, lastUpdated: null }; });
