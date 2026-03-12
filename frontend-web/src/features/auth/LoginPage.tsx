@@ -52,11 +52,15 @@ export const LoginPage: React.FC = () => {
       const ax = err as { message?: string; code?: string; response?: { data?: { message?: string }; status?: number } };
       const msg = ax?.response?.data?.message;
       const status = ax?.response?.status;
-      const isConnectionRefused = msg === 'Network Error' || ax?.message === 'Network Error' || ax?.code === 'ERR_NETWORK';
-      
+      const isConnectionRefused =
+        msg === 'Network Error' ||
+        ax?.message === 'Network Error' ||
+        ax?.code === 'ERR_NETWORK' ||
+        ax?.code === 'ERR_CONNECTION_REFUSED';
+
       if (isConnectionRefused || ax?.code === 'ECONNABORTED') {
         setError(
-          'El servidor puede estar despertando (plan gratuito). Esperá 1 minuto, hacé click en "Despertar servidor" y reintentá.'
+          'No se pudo conectar al servidor. Verificá que el backend esté corriendo (en la carpeta backend: npm run dev).'
         );
       } else if (status === 401) {
         setError('Usuario o contraseña incorrectos');
@@ -173,19 +177,6 @@ export const LoginPage: React.FC = () => {
             </Button>
 
             <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
-              {error && error.includes('despertando') && (
-                <Button
-                  fullWidth
-                  size="small"
-                  variant="outlined"
-                  sx={{ mb: 1.5 }}
-                  href="https://casa-de-cambio-backend.onrender.com/api/health"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  Despertar servidor
-                </Button>
-              )}
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                 Por seguridad, no mostramos credenciales en pantalla.
               </Typography>
