@@ -122,10 +122,14 @@ export const DashboardPage: React.FC = () => {
   const [quoteCompra, setQuoteCompra] = React.useState<number | null>(null);
   const [quoteVenta, setQuoteVenta] = React.useState<number | null>(null);
   const [quoteUpdatedAt, setQuoteUpdatedAt] = React.useState<Date | null>(null);
-  const [quoteCompanyName, setQuoteCompanyName] = React.useState('GRUPO ALVAREZ');
+  const QUOTE_NAME_KEY = 'ga_quote_company_name';
+  const [quoteCompanyName, setQuoteCompanyName] = React.useState(() =>
+    safeStorage.getItem(QUOTE_NAME_KEY) || 'GRUPO ALVAREZ'
+  );
   const [quoteThemeId, setQuoteThemeId] = React.useState<QuoteThemeId>('default');
   const [quoteNameDialogOpen, setQuoteNameDialogOpen] = React.useState(false);
   const [quoteNameEdit, setQuoteNameEdit] = React.useState('');
+  const quoteNameEditRef = React.useRef('');
   const quoteCardRef = React.useRef<HTMLDivElement>(null);
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
@@ -285,19 +289,22 @@ export const DashboardPage: React.FC = () => {
         reject(new Error('No quote card ref'));
         return;
       }
+      // Dar tiempo a que React pinte el nombre/estilo actual antes de capturar
       requestAnimationFrame(() => {
-        requestAnimationFrame(async () => {
-          try {
-            const canvas = await html2canvas(el, {
-              scale: 2,
-              useCORS: true,
-              backgroundColor: null,
-              logging: false
-            });
-            resolve(canvas);
-          } catch (e) {
-            reject(e);
-          }
+        requestAnimationFrame(() => {
+          setTimeout(async () => {
+            try {
+              const canvas = await html2canvas(el, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: null,
+                logging: false
+              });
+              resolve(canvas);
+            } catch (e) {
+              reject(e);
+            }
+          }, 50);
         });
       });
     });
@@ -795,7 +802,9 @@ export const DashboardPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   onClick={() => {
-                    setQuoteNameEdit(quoteCompanyName);
+                    const name = quoteCompanyName || 'GRUPO ALVAREZ';
+                    setQuoteNameEdit(name);
+                    quoteNameEditRef.current = name;
                     setQuoteNameDialogOpen(true);
                   }}
                 >
@@ -826,7 +835,11 @@ export const DashboardPage: React.FC = () => {
                     fullWidth
                     label="Nombre de la empresa"
                     value={quoteNameEdit}
-                    onChange={(e) => setQuoteNameEdit(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setQuoteNameEdit(v);
+                      quoteNameEditRef.current = v;
+                    }}
                     sx={{ mt: 1 }}
                   />
                 </DialogContent>
@@ -835,7 +848,11 @@ export const DashboardPage: React.FC = () => {
                   <Button
                     variant="contained"
                     onClick={() => {
-                      if (quoteNameEdit.trim()) setQuoteCompanyName(quoteNameEdit.trim());
+                      const name = quoteNameEditRef.current.trim();
+                      if (name) {
+                        setQuoteCompanyName(name);
+                        safeStorage.setItem(QUOTE_NAME_KEY, name);
+                      }
                       setQuoteNameDialogOpen(false);
                     }}
                   >
