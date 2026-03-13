@@ -1,27 +1,73 @@
 import React from 'react';
 import { Box, Button, Card, CardContent, Grid2 as Grid, Skeleton, Typography } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { fetchDailyBalance } from '../../lib/api';
-import type { DailyBalanceReport } from '../../lib/api';
+import type { DailyBalanceReport, DailyBalanceReportOp } from '../../lib/api';
 
 function formatDateForFilename(isoDate: string): string {
   const [y, m, d] = isoDate.split('-');
   return `${d}-${m}-${y}`;
 }
 
+const headerStyle = {
+  font: { bold: true, sz: 12 },
+  fill: { fgColor: { rgb: '1a237e' } },
+  alignment: { horizontal: 'center' }
+};
+const gainStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '2e7d32' } } };
+const lossStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: 'c62828' } } };
+const labelStyle = { font: { bold: true } };
+
 function exportBalanceToExcel(report: DailyBalanceReport) {
-  const sheetData = [
-    ['Balance del día', report.date],
-    ['USD comprados', report.usdComprados],
-    ['USD vendidos', report.usdVendidos],
-    ['Ganancia estimada (ARS)', report.gananciaEstimadaARS],
-    [],
-    ['Total ARS compras', report.totalARSCompras],
-    ['Total ARS ventas', report.totalARSVentas]
-  ];
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
   const wb = XLSX.utils.book_new();
+  const rows: (string | number)[][] = [];
+  const styles: Record<string, object> = {};
+
+  const addRow = (cells: (string | number)[], rowStyles?: object[]) => {
+    const r = rows.length + 1;
+    cells.forEach((v, c) => {
+      const col = String.fromCharCode(65 + c);
+      const ref = col + r;
+      styles[ref] = rowStyles?.[c] || {};
+    });
+    rows.push(cells);
+  };
+
+  addRow(['REPORTE DE BALANCE DEL DÍA'], [headerStyle]);
+  addRow([`Fecha: ${report.date}`], [labelStyle]);
+  addRow([]);
+  addRow(['Resumen'], [labelStyle]);
+  addRow(['USD comprados', report.usdComprados], [labelStyle, { numFmt: '#,##0.00' }]);
+  addRow(['USD vendidos', report.usdVendidos], [labelStyle, { numFmt: '#,##0.00' }]);
+  addRow(['Total ARS compras', report.totalARSCompras], [labelStyle, { numFmt: '#,##0.00' }]);
+  addRow(['Total ARS ventas', report.totalARSVentas], [labelStyle, { numFmt: '#,##0.00' }]);
+  addRow([]);
+
+  const ganancia = report.gananciaEstimadaARS;
+  const gs = ganancia >= 0 ? gainStyle : lossStyle;
+  addRow([ganancia >= 0 ? 'Ganancia (ARS)' : 'Pérdida (ARS)', ganancia], [gs, { ...gs, numFmt: '#,##0.00' }]);
+  addRow([]);
+
+  const ops = report.operations || [];
+  if (ops.length > 0) {
+    addRow(['Detalle de operaciones'], [headerStyle]);
+    const headerStyleLight = { font: { bold: true }, fill: { fgColor: { rgb: 'e3f2fd' } } };
+    addRow(['Hora', 'Tipo', 'Cliente', 'Moneda', 'Cantidad', 'Cotiz.', 'Total ARS', 'Medio pago', 'Empleado'], Array(9).fill(headerStyleLight));
+    (ops as DailyBalanceReportOp[]).forEach((op) => {
+      const dt = op.createdAt ? new Date(op.createdAt).toLocaleString('es-AR', { timeStyle: 'short' }) : '';
+      const typeStyle = op.type === 'Venta' ? { font: { color: { rgb: '2e7d32' } } } : { font: { color: { rgb: 'c62828' } } };
+      addRow(
+        [dt, op.type, op.clientName || '', op.currency || '', op.amount ?? 0, op.rate ?? 0, op.totalARS ?? 0, op.paymentMethod || '', op.employeeName || ''],
+        [{}, typeStyle, {}, {}, { numFmt: '#,##0.00' }, { numFmt: '#,##0.00' }, { numFmt: '#,##0.00' }, {}, {}]
+      );
+    });
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  Object.entries(styles).forEach(([ref, s]) => {
+    if (ws[ref]) (ws[ref] as { s?: object }).s = s;
+  });
   XLSX.utils.book_append_sheet(wb, ws, 'Balance');
   const filename = `balance_${formatDateForFilename(report.date)}.xlsx`;
   XLSX.writeFile(wb, filename);
@@ -101,7 +147,11 @@ export const ReportsPage: React.FC = () => {
                   <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 1 }}>
                     Ganancia estimada:
                   </Typography>
-                  <Typography variant="h6" color="primary" fontWeight={700}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={700}
+                    sx={{ color: report.gananciaEstimadaARS >= 0 ? 'success.main' : 'error.main' }}
+                  >
                     ${report.gananciaEstimadaARS.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -119,7 +169,7 @@ export const ReportsPage: React.FC = () => {
                 Exportar balance
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Descarga un archivo Excel con el balance del día (balance_DD-MM-AAAA.xlsx).
+                Descarga un Excel profesional con resumen, ganancias/pérdidas en color y detalle de operaciones.
               </Typography>
               <Button
                 variant="contained"

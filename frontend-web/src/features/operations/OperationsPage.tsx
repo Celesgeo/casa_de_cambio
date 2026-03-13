@@ -3,19 +3,19 @@ import {
   Box,
   Card,
   CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Typography,
   TextField,
   MenuItem,
   Button,
   Stack,
-  Grid2 as Grid
+  Grid2 as Grid,
+  Paper
 } from '@mui/material';
-import {
-  DataGrid,
-  GridColDef,
-  GridToolbarContainer,
-  GridToolbarQuickFilter
-} from '@mui/x-data-grid';
 import { createOperation, fetchExchangeOperations } from '../../lib/api';
 import type { ExchangeOperation, CreateOperationPayload } from '../../lib/api';
 
@@ -51,6 +51,7 @@ export const OperationsPage: React.FC = () => {
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [quickFilter, setQuickFilter] = React.useState('');
   const [form, setForm] = React.useState<OperationFormState>({
     type: 'Compra',
     clientName: '',
@@ -63,6 +64,27 @@ export const OperationsPage: React.FC = () => {
     splitPercentFirst: '50',
     surchargePercent: ''
   });
+
+  const filteredRows = React.useMemo(() => {
+    if (!quickFilter.trim()) return rows;
+    const q = quickFilter.toLowerCase();
+    return rows.filter(
+      (r) =>
+        (r.customerName || '').toLowerCase().includes(q) ||
+        (r.id || '').toLowerCase().includes(q) ||
+        (r.teller || '').toLowerCase().includes(q)
+    );
+  }, [rows, quickFilter]);
+
+  const rowsByDate = React.useMemo(() => {
+    const map = new Map<string, ExchangeOperation[]>();
+    filteredRows.forEach((r) => {
+      const d = r.date ? new Date(String(r.date)).toISOString().slice(0, 10) : '';
+      if (!map.has(d)) map.set(d, []);
+      map.get(d)!.push(r);
+    });
+    return Array.from(map.entries()).sort(([a], [b]) => (b || '').localeCompare(a || ''));
+  }, [filteredRows]);
 
   const loadOperations = React.useCallback(async () => {
     setLoadError(null);
@@ -82,108 +104,6 @@ export const OperationsPage: React.FC = () => {
     loadOperations();
   }, [loadOperations]);
 
-  const columns: GridColDef<ExchangeOperation>[] = [
-    { field: 'id', headerName: 'ID', flex: 1, minWidth: 140 },
-    {
-      field: 'date',
-      headerName: 'Date',
-      flex: 1,
-      minWidth: 160,
-      valueFormatter(params: { value?: unknown }) {
-        const val = params.value;
-        return val != null
-          ? new Date(String(val)).toLocaleString('es-AR', {
-              dateStyle: 'short',
-              timeStyle: 'short'
-            })
-          : '';
-      }
-    },
-    {
-      field: 'customerName',
-      headerName: 'Customer',
-      flex: 1.2,
-      minWidth: 160
-    },
-    {
-      field: 'fromCurrency',
-      headerName: 'From',
-      flex: 0.6,
-      minWidth: 80
-    },
-    {
-      field: 'toCurrency',
-      headerName: 'To',
-      flex: 0.6,
-      minWidth: 80
-    },
-    {
-      field: 'amountFrom',
-      headerName: 'Cantidad',
-      flex: 0.8,
-      minWidth: 100,
-      valueFormatter(params: { value?: unknown }) {
-        const v = Number(params.value);
-        return Number.isNaN(v) ? '' : v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-      }
-    },
-    {
-      field: 'rateApplied',
-      headerName: 'Cotización ($)',
-      flex: 0.8,
-      minWidth: 110,
-      valueFormatter(params: { value?: unknown }) {
-        const v = Number(params.value);
-        return Number.isNaN(v) ? '' : v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-      }
-    },
-    {
-      field: 'totalARS',
-      headerName: 'Total ARS',
-      flex: 1,
-      minWidth: 130,
-      valueFormatter(params: { value?: unknown; row?: ExchangeOperation }) {
-        const v = Number(params.value);
-        const row = params.row;
-        if (Number.isNaN(v) || v === 0) {
-          if (row?.amountFrom != null && row?.rateApplied != null) {
-            const calc = Number(row.amountFrom) * Number(row.rateApplied);
-            return calc.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-          }
-          return '';
-        }
-        return v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      }
-    },
-    {
-      field: 'montoFormula',
-      headerName: 'Cálculo',
-      flex: 1.2,
-      minWidth: 180,
-      valueGetter: (value: unknown, row: ExchangeOperation) => {
-        const amt = Number(row?.amountFrom) || 0;
-        const rate = Number(row?.rateApplied) || 0;
-        const total = Number(row?.totalARS) ?? amt * rate;
-        if (amt === 0 && rate === 0) return '';
-        const amtStr = amt.toLocaleString('es-AR', { maximumFractionDigits: 2 });
-        const rateStr = rate.toLocaleString('es-AR', { maximumFractionDigits: 2 });
-        const totalStr = total.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-        return `${amtStr} × ${rateStr} = $${totalStr}`;
-      }
-    },
-    {
-      field: 'branch',
-      headerName: 'Branch',
-      flex: 1,
-      minWidth: 140
-    },
-    {
-      field: 'teller',
-      headerName: 'Teller',
-      flex: 0.8,
-      minWidth: 100
-    }
-  ];
 
   const handleChange =
     (field: keyof OperationFormState) =>
@@ -508,7 +428,7 @@ export const OperationsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, md: 8 }}>
           <Card>
-            <CardContent sx={{ height: 540, display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', minHeight: 400 }}>
               {loadError && (
                 <Typography variant="body2" color="error" sx={{ mb: 1 }}>
                   {loadError}
@@ -517,42 +437,113 @@ export const OperationsPage: React.FC = () => {
                   </Button>
                 </Typography>
               )}
-              <Box sx={{ flex: 1, width: '100%', minHeight: 400, minWidth: 300, overflow: 'hidden' }}>
-                <DataGrid
-                  rows={rows}
-                  columns={columns}
-                  loading={loading}
-                  disableRowSelectionOnClick
-                  autoHeight={false}
-                  sx={{
-                    height: '100%',
-                    border: 'none',
-                    '& .MuiDataGrid-columnHeaders': {
-                      borderBottom: '1px solid',
-                      borderColor: 'divider'
-                    }
-                  }}
-                  slots={{
-                    toolbar: CustomToolbar
-                  }}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Operaciones por fecha
+                </Typography>
+                <TextField
+                  size="small"
+                  placeholder="Filtrar por cliente, empleado…"
+                  value={quickFilter}
+                  onChange={(e) => setQuickFilter(e.target.value)}
+                  sx={{ ml: 'auto', minWidth: 200 }}
                 />
+              </Box>
+              <Box sx={{ flex: 1, overflow: 'auto' }}>
+                {loading ? (
+                  <Typography color="text.secondary">Cargando…</Typography>
+                ) : rowsByDate.length === 0 ? (
+                  <Typography color="text.secondary">No hay operaciones</Typography>
+                ) : (
+                  rowsByDate.map(([dateKey, dateRows]) => {
+                    const dateLabel =
+                      dateKey && dateKey !== 'undefined'
+                        ? new Date(dateKey + 'T12:00:00').toLocaleDateString('es-AR', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })
+                        : 'Sin fecha';
+                    return (
+                      <Box key={dateKey} sx={{ mb: 3 }}>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={600}
+                          sx={{ mb: 1, textTransform: 'capitalize', color: 'primary.main' }}
+                        >
+                          {dateLabel}
+                        </Typography>
+                        <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                                <TableCell>Hora</TableCell>
+                                <TableCell>Tipo</TableCell>
+                                <TableCell>Cliente</TableCell>
+                                <TableCell>Moneda</TableCell>
+                                <TableCell align="right">Cantidad</TableCell>
+                                <TableCell align="right">Cotiz.</TableCell>
+                                <TableCell align="right">Total ARS</TableCell>
+                                <TableCell>Empleado</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {dateRows.map((r) => (
+                                <TableRow key={r.id} hover>
+                                  <TableCell>
+                                    {r.date
+                                      ? new Date(String(r.date)).toLocaleTimeString('es-AR', {
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })
+                                      : '—'}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography
+                                      component="span"
+                                      variant="body2"
+                                      sx={{ color: r.type === 'Venta' ? 'success.main' : 'error.main', fontWeight: 600 }}
+                                    >
+                                      {r.type}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>{r.customerName || '—'}</TableCell>
+                                  <TableCell>{r.fromCurrency || '—'}</TableCell>
+                                  <TableCell align="right">
+                                    {Number(r.amountFrom || 0).toLocaleString('es-AR', {
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 2
+                                    })}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {Number(r.rateApplied || 0).toLocaleString('es-AR', {
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 2
+                                    })}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {(
+                                      Number(r.totalARS) ||
+                                      Number(r.amountFrom || 0) * Number(r.rateApplied || 0)
+                                    ).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  </TableCell>
+                                  <TableCell>{r.teller || '—'}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </Paper>
+                      </Box>
+                    );
+                  })
+                )}
               </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
     </Box>
-  );
-};
-
-const CustomToolbar: React.FC = () => {
-  return (
-    <GridToolbarContainer sx={{ justifyContent: 'space-between', mb: 1 }}>
-      <Typography variant="subtitle2" color="text.secondary">
-        Daily operations
-      </Typography>
-      <GridToolbarQuickFilter placeholder="Quick filter…" />
-    </GridToolbarContainer>
   );
 };
 

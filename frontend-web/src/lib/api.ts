@@ -138,6 +138,18 @@ export interface WhatsAppQuote {
   venta: number;
 }
 
+export interface DailyBalanceReportOp {
+  type: string;
+  clientName: string;
+  currency: string;
+  amount: number;
+  rate: number;
+  totalARS: number;
+  paymentMethod?: string;
+  employeeName?: string;
+  createdAt?: string;
+}
+
 export interface DailyBalanceReport {
   date: string;
   usdComprados: number;
@@ -145,6 +157,7 @@ export interface DailyBalanceReport {
   gananciaEstimadaARS: number;
   totalARSCompras: number;
   totalARSVentas: number;
+  operations?: DailyBalanceReportOp[];
 }
 
 // --- Auth ---

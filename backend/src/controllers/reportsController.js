@@ -63,13 +63,26 @@ exports.getDailyBalance = async (req, res, next) => {
 
     const gananciaEstimadaARS = totalARSVentas - totalARSCompras;
 
+    const opsForExport = operations.map((op) => ({
+      type: op.type,
+      clientName: op.clientName,
+      currency: op.currency,
+      amount: op.amount,
+      rate: op.rate,
+      totalARS: op.totalARS,
+      paymentMethod: op.paymentMethod,
+      employeeName: op.employeeName,
+      createdAt: op.createdAt
+    }));
+
     return res.json({
       date,
       usdComprados: Math.round(usdComprados * 100) / 100,
       usdVendidos: Math.round(usdVendidos * 100) / 100,
       gananciaEstimadaARS: Math.round(gananciaEstimadaARS * 100) / 100,
       totalARSCompras: Math.round(totalARSCompras * 100) / 100,
-      totalARSVentas: Math.round(totalARSVentas * 100) / 100
+      totalARSVentas: Math.round(totalARSVentas * 100) / 100,
+      operations: opsForExport
     });
   } catch (error) {
     console.error('Reports daily balance error:', error);

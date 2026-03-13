@@ -425,7 +425,16 @@ export const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Operaciones realizadas" value={operations.length} loading={loading && !hasData} />
+          <StatCard
+            label="Operaciones realizadas"
+            value={summary?.operationsToday ?? operations.filter((o) => {
+              if (!o.date) return false;
+              const d = new Date(o.date);
+              const today = new Date();
+              return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+            }).length}
+            loading={loading && !hasData}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard

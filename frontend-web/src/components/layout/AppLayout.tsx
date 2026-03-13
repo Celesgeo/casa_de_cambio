@@ -104,7 +104,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           boxSizing: 'border-box'
         }}
       >
-        <Box sx={{ maxWidth: 1440, mx: 'auto', width: '100%', minHeight: 200, boxSizing: 'border-box' }}>
+        <Box sx={{ maxWidth: '100%', width: '100%', minHeight: 200, boxSizing: 'border-box' }}>
           {children}
         </Box>
       </Box>
