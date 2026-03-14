@@ -111,6 +111,89 @@ const mockVolumeSeries = [
   { label: '15:00', value: 24000 }
 ];
 
+function buildDollarHistory(
+  operations: ExchangeOperation[],
+  marketRates: { compra: number; venta: number } | null
+): { fecha: string; tasa: number; label: string; dateKey: string }[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const usdOps = operations.filter((o) => (o.fromCurrency || '').toUpperCase() === 'USD');
+  const byDate = new Map<string, number[]>();
+  usdOps.forEach((op) => {
+    const d = op.date ? new Date(String(op.date)) : null;
+    if (!d) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const rate = Number(op.rateApplied) || 0;
+    if (rate > 0) {
+      if (!byDate.has(key)) byDate.set(key, []);
+      byDate.get(key)!.push(rate);
+    }
+  });
+  const result: { fecha: string; tasa: number; label: string; dateKey: string }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const label = d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+    const rates = byDate.get(dateKey);
+    let tasa = 0;
+    if (rates && rates.length > 0) {
+      tasa = rates.reduce((a, b) => a + b, 0) / rates.length;
+    } else if (i === 0 && marketRates) {
+      tasa = (marketRates.compra + marketRates.venta) / 2;
+    }
+    result.push({ fecha: dateKey, tasa: Math.round(tasa * 100) / 100, label, dateKey });
+  }
+  return result;
+}
+
+const DollarHistoryChart: React.FC<{
+  operations: ExchangeOperation[];
+  marketRates: { compra: number; venta: number } | null;
+  loading: boolean;
+}> = ({ operations, marketRates, loading }) => {
+  const series = React.useMemo(
+    () => buildDollarHistory(operations, marketRates),
+    [operations, marketRates]
+  );
+  const hasData = series.some((s) => s.tasa > 0);
+  return (
+    <Card>
+      <CardContent>
+        <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+          Historial del dólar (últimos 30 días)
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Tendencia de tasas para fijar precio con mejor criterio
+        </Typography>
+        {loading ? (
+          <Skeleton height={240} />
+        ) : hasData ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={series} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorDollar" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#00E0B8" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#00E0B8" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v: number) => [`$${v.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 'Tasa']} />
+              <Area type="monotone" dataKey="tasa" stroke="#00E0B8" fillOpacity={1} fill="url(#colorDollar)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            Cargá operaciones en USD para ver el historial de tasas. La cotización actual del mercado también se muestra.
+          </Typography>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = React.useState<DashboardSummary | null>(null);
   const [operations, setOperations] = React.useState<ExchangeOperation[]>([]);
@@ -752,6 +835,13 @@ export const DashboardPage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </Grid>
+      </Grid>
+
+      {/* Historial del dólar (últimos 30 días) */}
+      <Grid container spacing={2}>
+        <Grid size={12}>
+          <DollarHistoryChart operations={operations} marketRates={marketRates} loading={loading} />
         </Grid>
       </Grid>
 

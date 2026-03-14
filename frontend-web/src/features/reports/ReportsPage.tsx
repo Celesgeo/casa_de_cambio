@@ -2,8 +2,8 @@ import React from 'react';
 import { Box, Button, Card, CardContent, Grid2 as Grid, Skeleton, Typography } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import * as XLSX from 'xlsx-js-style';
-import { fetchDailyBalance } from '../../lib/api';
-import type { DailyBalanceReport, DailyBalanceReportOp } from '../../lib/api';
+import { fetchDailyBalance, fetchPatrimony } from '../../lib/api';
+import type { DailyBalanceReport, DailyBalanceReportOp, PatrimonyItem } from '../../lib/api';
 
 function formatDateForFilename(isoDate: string): string {
   const [y, m, d] = isoDate.split('-');
@@ -19,7 +19,7 @@ const gainStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgCo
 const lossStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: 'c62828' } } };
 const labelStyle = { font: { bold: true } };
 
-function exportBalanceToExcel(report: DailyBalanceReport) {
+function exportBalanceToExcel(report: DailyBalanceReport, patrimony: PatrimonyItem[]) {
   const wb = XLSX.utils.book_new();
   const rows: (string | number)[][] = [];
   const styles: Record<string, object> = {};
@@ -49,6 +49,13 @@ function exportBalanceToExcel(report: DailyBalanceReport) {
   addRow([ganancia >= 0 ? 'Ganancia (ARS)' : 'Pérdida (ARS)', ganancia], [gs, { ...gs, numFmt: '#,##0.00' }]);
   addRow([]);
 
+  addRow(['Patrimonio por moneda'], [headerStyle]);
+  (patrimony || []).forEach((p) => {
+    const amt = p?.amount ?? 0;
+    if (p?.currency) addRow([`Patrimonio ${p.currency}`, amt], [labelStyle, { numFmt: '#,##0.00' }]);
+  });
+  addRow([]);
+
   const ops = report.operations || [];
   if (ops.length > 0) {
     addRow(['Detalle de operaciones'], [headerStyle]);
@@ -75,6 +82,7 @@ function exportBalanceToExcel(report: DailyBalanceReport) {
 
 export const ReportsPage: React.FC = () => {
   const [report, setReport] = React.useState<DailyBalanceReport | null>(null);
+  const [patrimony, setPatrimony] = React.useState<PatrimonyItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -82,8 +90,9 @@ export const ReportsPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchDailyBalance();
+      const [data, pat] = await Promise.all([fetchDailyBalance(), fetchPatrimony()]);
       setReport(data);
+      setPatrimony(Array.isArray(pat) ? pat : []);
     } catch (e) {
       console.error('Reports load error', e);
       const err = e as { response?: { data?: { message?: string } }; message?: string };
@@ -98,7 +107,7 @@ export const ReportsPage: React.FC = () => {
   }, [load]);
 
   const handleExport = () => {
-    if (report) exportBalanceToExcel(report);
+    if (report) exportBalanceToExcel(report, patrimony);
   };
 
   return (
@@ -154,7 +163,18 @@ export const ReportsPage: React.FC = () => {
                   >
                     ${report.gananciaEstimadaARS.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="subtitle2" fontWeight={600} sx={{ mt: 1.5 }}>
+                    Patrimonio por moneda
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 0.5 }}>
+                    {patrimony.map((p) => (
+                      <Typography key={p.currency} variant="body2">
+                        <strong>{p.currency}:</strong>{' '}
+                        {(p.amount ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </Typography>
+                    ))}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                     Fecha: {report.date}
                   </Typography>
                 </Box>
