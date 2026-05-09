@@ -1,4 +1,5 @@
 import React from 'react';
+import { flushSync } from 'react-dom';
 import {
   Alert,
   Box,
@@ -27,8 +28,7 @@ import {
   fetchPatrimony,
   fetchWhatsAppQuote,
   initPatrimony,
-  syncOurRates,
-  updateOurRates
+  syncOurRates
 } from '../../lib/api';
 import type { ClosingResult, DashboardSummary, ExchangeOperation, FinanzasArgyRates, PatrimonyItem } from '../../lib/api';
 import { safeStorage } from '../../lib/storage';
@@ -225,8 +225,9 @@ export const DashboardPage: React.FC = () => {
   const [finanzasArgy, setFinanzasArgy] = React.useState<FinanzasArgyRates | null>(null);
   const [ourRates, setOurRates] = React.useState<{ USD: { compra: number; venta: number } } | null>(null);
   const [closing, setClosing] = React.useState<ClosingResult | null>(null);
-  const [quoteCompra, setQuoteCompra] = React.useState<number | null>(null);
-  const [quoteVenta, setQuoteVenta] = React.useState<number | null>(null);
+  /** Texto en inputs = misma fuente que la imagen (evita desync número/input vs html2canvas). */
+  const [quoteCompraStr, setQuoteCompraStr] = React.useState('');
+  const [quoteVentaStr, setQuoteVentaStr] = React.useState('');
   const [quoteUpdatedAt, setQuoteUpdatedAt] = React.useState<Date | null>(null);
   const QUOTE_NAME_KEY = 'ga_quote_company_name';
   const [quoteCompanyName, setQuoteCompanyName] = React.useState(() =>
@@ -240,12 +241,19 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [syncing, setSyncing] = React.useState(false);
-  const [savingQuote, setSavingQuote] = React.useState(false);
   const [refreshingRates, setRefreshingRates] = React.useState(false);
   const [initAmounts, setInitAmounts] = React.useState<Record<string, string>>(
     Object.fromEntries(CURRENCIES.map((c) => [c, '']))
   );
   const mountedRef = React.useRef(true);
+
+  const quoteCompraNum = parseQuoteInput(quoteCompraStr);
+  const quoteVentaNum = parseQuoteInput(quoteVentaStr);
+  const canUseQuote =
+    quoteCompraNum != null &&
+    quoteVentaNum != null &&
+    Number.isFinite(quoteCompraNum) &&
+    Number.isFinite(quoteVentaNum);
 
   const loadAll = React.useCallback(async () => {
     const token = safeStorage.getItem('ga_token');
@@ -330,8 +338,8 @@ export const DashboardPage: React.FC = () => {
     if (!saved) return;
     try {
       const parsed = JSON.parse(saved) as { compra?: number; venta?: number; updatedAt?: string };
-      if (typeof parsed.compra === 'number') setQuoteCompra(parsed.compra);
-      if (typeof parsed.venta === 'number') setQuoteVenta(parsed.venta);
+      if (typeof parsed.compra === 'number') setQuoteCompraStr(String(parsed.compra));
+      if (typeof parsed.venta === 'number') setQuoteVentaStr(String(parsed.venta));
       if (parsed.updatedAt) {
         setQuoteUpdatedAt(new Date(parsed.updatedAt));
       }
@@ -355,9 +363,9 @@ export const DashboardPage: React.FC = () => {
 
   React.useEffect(() => {
     if (!ourRates?.USD) return;
-    if (quoteCompra == null) setQuoteCompra(ourRates.USD.compra);
-    if (quoteVenta == null) setQuoteVenta(ourRates.USD.venta);
-  }, [ourRates, quoteCompra, quoteVenta]);
+    setQuoteCompraStr((prev) => (prev.trim() === '' ? String(ourRates!.USD.compra) : prev));
+    setQuoteVentaStr((prev) => (prev.trim() === '' ? String(ourRates!.USD.venta) : prev));
+  }, [ourRates]);
 
   const handleUpdateRates = async () => {
     setSyncing(true);
@@ -400,8 +408,8 @@ export const DashboardPage: React.FC = () => {
   const handleLoadCurrentQuote = async () => {
     const local = readLocalQuoteRates();
     if (local) {
-      setQuoteCompra(local.compra);
-      setQuoteVenta(local.venta);
+      setQuoteCompraStr(String(local.compra));
+      setQuoteVentaStr(String(local.venta));
       setQuoteUpdatedAt(new Date());
     }
     try {
@@ -411,8 +419,8 @@ export const DashboardPage: React.FC = () => {
       if (!Number.isFinite(compra) || !Number.isFinite(venta)) {
         throw new Error('Cotización inválida');
       }
-      setQuoteCompra(compra);
-      setQuoteVenta(venta);
+      setQuoteCompraStr(String(compra));
+      setQuoteVentaStr(String(venta));
       setQuoteUpdatedAt(new Date());
     } catch (e) {
       try {
@@ -420,8 +428,8 @@ export const DashboardPage: React.FC = () => {
         const compra = Number(q?.compra);
         const venta = Number(q?.venta);
         if (Number.isFinite(compra) && Number.isFinite(venta)) {
-          setQuoteCompra(compra);
-          setQuoteVenta(venta);
+          setQuoteCompraStr(String(compra));
+          setQuoteVentaStr(String(venta));
           setQuoteUpdatedAt(new Date());
           return;
         }
@@ -433,24 +441,26 @@ export const DashboardPage: React.FC = () => {
   };
 
   const handleSaveQuoteRates = async () => {
-    if (quoteCompra == null || quoteVenta == null) return;
+    if (!canUseQuote || quoteCompraNum == null || quoteVentaNum == null) return;
     const data = {
-      compra: quoteCompra,
-      venta: quoteVenta,
+      compra: quoteCompraNum,
+      venta: quoteVentaNum,
       updatedAt: new Date().toISOString()
     };
 
-    // guardar localmente
     safeStorage.setItem('ga_quote_rates', JSON.stringify(data));
+    try {
+      localStorage.setItem('ga_quote_rates', JSON.stringify(data));
+    } catch {
+      /* ignore */
+    }
 
-    // actualizar pantalla
     setQuoteUpdatedAt(new Date());
 
-    // actualizar preview
     setOurRates({
       USD: {
-        compra: quoteCompra,
-        venta: quoteVenta
+        compra: quoteCompraNum,
+        venta: quoteVentaNum
       }
     });
 
@@ -461,11 +471,6 @@ export const DashboardPage: React.FC = () => {
 
   const formatQuoteNum = (n: number | null) =>
     n != null ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
-  const canUseQuote =
-    quoteCompra != null &&
-    quoteVenta != null &&
-    Number.isFinite(quoteCompra) &&
-    Number.isFinite(quoteVenta);
 
   const captureQuoteCard = (): Promise<HTMLCanvasElement> =>
     new Promise((resolve, reject) => {
@@ -474,7 +479,7 @@ export const DashboardPage: React.FC = () => {
         reject(new Error('No quote card ref'));
         return;
       }
-      // Dar tiempo a que React pinte el nombre/estilo actual antes de capturar
+      flushSync(() => {});
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setTimeout(async () => {
@@ -482,14 +487,16 @@ export const DashboardPage: React.FC = () => {
               const canvas = await html2canvas(el, {
                 scale: 2,
                 useCORS: true,
-                backgroundColor: null,
-                logging: false
+                backgroundColor: '#ffffff',
+                logging: false,
+                scrollX: 0,
+                scrollY: -window.scrollY
               });
               resolve(canvas);
             } catch (e) {
               reject(e);
             }
-          }, 50);
+          }, 120);
         });
       });
     });
@@ -994,13 +1001,8 @@ export const DashboardPage: React.FC = () => {
                 <Button variant="contained" onClick={handleLoadCurrentQuote}>
                   Cargar cotización actual
                 </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleSaveQuoteRates}
-                  disabled={savingQuote || !canUseQuote}
-                >
-                  {savingQuote ? 'Guardando…' : 'Guardar valores'}
+                <Button variant="contained" color="success" onClick={handleSaveQuoteRates} disabled={!canUseQuote}>
+                  Guardar valores
                 </Button>
                 <Button variant="outlined" onClick={handleDownloadQuoteImage} disabled={!canUseQuote}>
                   Descargar imagen
@@ -1073,26 +1075,26 @@ export const DashboardPage: React.FC = () => {
                 <TextField
                   size="small"
                   label="Compramos ($)"
-                  type="number"
-                  value={quoteCompra ?? ''}
+                  type="text"
+                  inputMode="decimal"
+                  value={quoteCompraStr}
                   onChange={(e) => {
-                    setQuoteCompra(parseQuoteInput(e.target.value));
+                    setQuoteCompraStr(e.target.value);
                     setQuoteUpdatedAt(new Date());
                   }}
                   sx={{ width: 140 }}
-                  inputProps={{ min: 0, step: 0.01 }}
                 />
                 <TextField
                   size="small"
                   label="Vendemos ($)"
-                  type="number"
-                  value={quoteVenta ?? ''}
+                  type="text"
+                  inputMode="decimal"
+                  value={quoteVentaStr}
                   onChange={(e) => {
-                    setQuoteVenta(parseQuoteInput(e.target.value));
+                    setQuoteVentaStr(e.target.value);
                     setQuoteUpdatedAt(new Date());
                   }}
                   sx={{ width: 140 }}
-                  inputProps={{ min: 0, step: 0.01 }}
                 />
               </Box>
               {/* Tarjeta visual para captura como imagen */}
@@ -1161,17 +1163,19 @@ export const DashboardPage: React.FC = () => {
                       alignItems: 'center'
                     }}
                   >
-                    <Typography
+                    <Box
+                      component="div"
                       sx={{
                         fontWeight: 800,
                         fontSize: { xs: '1.4rem', sm: '1.6rem' },
                         letterSpacing: 1,
                         whiteSpace: 'nowrap',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        color: QUOTE_THEMES[quoteThemeId].compraText
                       }}
                     >
-                      COMPRAMOS: ${formatQuoteNum(quoteCompra)}
-                    </Typography>
+                      COMPRAMOS: ${formatQuoteNum(quoteCompraNum)}
+                    </Box>
                   </Box>
                   <Box
                     sx={{
@@ -1184,17 +1188,19 @@ export const DashboardPage: React.FC = () => {
                       alignItems: 'center'
                     }}
                   >
-                    <Typography
+                    <Box
+                      component="div"
                       sx={{
                         fontWeight: 800,
                         fontSize: { xs: '1.4rem', sm: '1.6rem' },
                         letterSpacing: 1,
                         whiteSpace: 'nowrap',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        color: QUOTE_THEMES[quoteThemeId].ventaText
                       }}
                     >
-                      VENDEMOS: ${formatQuoteNum(quoteVenta)}
-                    </Typography>
+                      VENDEMOS: ${formatQuoteNum(quoteVentaNum)}
+                    </Box>
                   </Box>
                 </Box>
 
