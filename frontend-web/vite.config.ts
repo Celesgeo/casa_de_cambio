@@ -20,6 +20,9 @@ export default defineConfig({
   server: {
     port: 5173
   },
+  preview: {
+    allowedHosts: ['casadecambio-production.up.railway.app']
+  },
   base: '/',
   build: {
     outDir: 'dist',

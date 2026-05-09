@@ -220,7 +220,16 @@ export const fetchFinanzasArgyRates = () =>
   api.get<FinanzasArgyRates>('/rates/finanzasargy').then((r) => r.data);
 
 export const fetchOurRates = () =>
-  api.get<{ USD: { compra: number; venta: number }; lastUpdated: string | null }>('/rates/ours').then((r) => r.data);
+  api
+    .get<{ USD: { compra: number; venta: number }; lastUpdated: string | null }>('/rates/ours', {
+      params: { _t: Date.now() }
+    })
+    .then((r) => r.data);
+
+export const updateOurRates = (compra: number, venta: number) =>
+  api
+    .put<{ USD: { compra: number; venta: number }; lastUpdated: string | null }>('/rates/ours', { compra, venta })
+    .then((r) => r.data);
 
 export const syncOurRates = () =>
   api.post<{ message: string; rates: unknown }>('/rates/sync').then((r) => r.data);
@@ -231,7 +240,7 @@ export const fetchClosingCalculation = () =>
 
 // --- Quote (WhatsApp) ---
 export const fetchWhatsAppQuote = () =>
-  api.get<WhatsAppQuote>('/quote/whatsapp').then((r) => r.data);
+  api.get<WhatsAppQuote>('/quote/whatsapp', { params: { _t: Date.now() } }).then((r) => r.data);
 
 // --- Reports ---
 export const fetchDailyBalance = (date?: string) =>

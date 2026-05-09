@@ -27,7 +27,8 @@ import {
   fetchPatrimony,
   fetchWhatsAppQuote,
   initPatrimony,
-  syncOurRates
+  syncOurRates,
+  updateOurRates
 } from '../../lib/api';
 import type { ClosingResult, DashboardSummary, ExchangeOperation, FinanzasArgyRates, PatrimonyItem } from '../../lib/api';
 import { safeStorage } from '../../lib/storage';
@@ -100,6 +101,28 @@ const QUOTE_THEMES = {
 } as const;
 
 type QuoteThemeId = keyof typeof QUOTE_THEMES;
+
+function parseQuoteInput(value: string): number | null {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  const normalized = raw.replace(',', '.');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function readLocalQuoteRates(): { compra: number; venta: number } | null {
+  try {
+    const raw = safeStorage.getItem('ga_quote_rates');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { compra?: unknown; venta?: unknown };
+    const compra = Number(parsed?.compra);
+    const venta = Number(parsed?.venta);
+    if (!Number.isFinite(compra) || !Number.isFinite(venta)) return null;
+    return { compra, venta };
+  } catch {
+    return null;
+  }
+}
 
 const mockVolumeSeries = [
   { label: '09:00', value: 12000 },
@@ -217,6 +240,7 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [syncing, setSyncing] = React.useState(false);
+  const [savingQuote, setSavingQuote] = React.useState(false);
   const [refreshingRates, setRefreshingRates] = React.useState(false);
   const [initAmounts, setInitAmounts] = React.useState<Record<string, string>>(
     Object.fromEntries(CURRENCIES.map((c) => [c, '']))
@@ -301,6 +325,22 @@ export const DashboardPage: React.FC = () => {
   }, [loadAll]);
 
   React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('ga_quote_rates');
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved) as { compra?: number; venta?: number; updatedAt?: string };
+      if (typeof parsed.compra === 'number') setQuoteCompra(parsed.compra);
+      if (typeof parsed.venta === 'number') setQuoteVenta(parsed.venta);
+      if (parsed.updatedAt) {
+        setQuoteUpdatedAt(new Date(parsed.updatedAt));
+      }
+    } catch {
+      // ignore malformed local data
+    }
+  }, []);
+
+  React.useEffect(() => {
     if (import.meta.env.DEV) console.log('Estado actualizado (post-render):', {
       summary: summary != null,
       summaryVal: summary,
@@ -312,6 +352,12 @@ export const DashboardPage: React.FC = () => {
       loading
     });
   }, [summary, operations, patrimony, marketRates, ourRates, closing, loading]);
+
+  React.useEffect(() => {
+    if (!ourRates?.USD) return;
+    if (quoteCompra == null) setQuoteCompra(ourRates.USD.compra);
+    if (quoteVenta == null) setQuoteVenta(ourRates.USD.venta);
+  }, [ourRates, quoteCompra, quoteVenta]);
 
   const handleUpdateRates = async () => {
     setSyncing(true);
@@ -351,19 +397,75 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleWhatsAppQuote = async () => {
+  const handleLoadCurrentQuote = async () => {
+    const local = readLocalQuoteRates();
+    if (local) {
+      setQuoteCompra(local.compra);
+      setQuoteVenta(local.venta);
+      setQuoteUpdatedAt(new Date());
+    }
     try {
-      const q = await fetchWhatsAppQuote();
-      setQuoteCompra(q.compra);
-      setQuoteVenta(q.venta);
+      const ours = await fetchOurRates();
+      const compra = Number(ours?.USD?.compra);
+      const venta = Number(ours?.USD?.venta);
+      if (!Number.isFinite(compra) || !Number.isFinite(venta)) {
+        throw new Error('Cotización inválida');
+      }
+      setQuoteCompra(compra);
+      setQuoteVenta(venta);
       setQuoteUpdatedAt(new Date());
     } catch (e) {
-      if (process.env.NODE_ENV !== 'production') console.warn('Quote fetch error', e);
+      try {
+        const q = await fetchWhatsAppQuote();
+        const compra = Number(q?.compra);
+        const venta = Number(q?.venta);
+        if (Number.isFinite(compra) && Number.isFinite(venta)) {
+          setQuoteCompra(compra);
+          setQuoteVenta(venta);
+          setQuoteUpdatedAt(new Date());
+          return;
+        }
+      } catch {
+        // ignore fallback error
+      }
+      if (import.meta.env.DEV) console.warn('Quote fetch error', e);
+    }
+  };
+
+  const handleSaveQuoteRates = async () => {
+    if (quoteCompra == null || quoteVenta == null) return;
+    const data = {
+      compra: quoteCompra,
+      venta: quoteVenta,
+      updatedAt: new Date().toISOString()
+    };
+
+    // guardar localmente
+    safeStorage.setItem('ga_quote_rates', JSON.stringify(data));
+
+    // actualizar pantalla
+    setQuoteUpdatedAt(new Date());
+
+    // actualizar preview
+    setOurRates({
+      USD: {
+        compra: quoteCompra,
+        venta: quoteVenta
+      }
+    });
+
+    if (typeof window !== 'undefined') {
+      window.alert('Cotización guardada correctamente');
     }
   };
 
   const formatQuoteNum = (n: number | null) =>
     n != null ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+  const canUseQuote =
+    quoteCompra != null &&
+    quoteVenta != null &&
+    Number.isFinite(quoteCompra) &&
+    Number.isFinite(quoteVenta);
 
   const captureQuoteCard = (): Promise<HTMLCanvasElement> =>
     new Promise((resolve, reject) => {
@@ -886,16 +988,24 @@ export const DashboardPage: React.FC = () => {
                 Cotización para WhatsApp
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Generá la cotización, editá los valores y descargá o copiá la imagen para compartir.
+                Cargá manualmente Compramos/Vendemos, guardá la cotización del día y descargá la imagen para compartir.
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                <Button variant="contained" onClick={handleWhatsAppQuote}>
-                  Generar cotización
+                <Button variant="contained" onClick={handleLoadCurrentQuote}>
+                  Cargar cotización actual
                 </Button>
-                <Button variant="outlined" onClick={handleDownloadQuoteImage} disabled={quoteCompra == null && quoteVenta == null}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleSaveQuoteRates}
+                  disabled={savingQuote || !canUseQuote}
+                >
+                  {savingQuote ? 'Guardando…' : 'Guardar valores'}
+                </Button>
+                <Button variant="outlined" onClick={handleDownloadQuoteImage} disabled={!canUseQuote}>
                   Descargar imagen
                 </Button>
-                <Button variant="outlined" onClick={handleCopyQuoteImage} disabled={quoteCompra == null && quoteVenta == null}>
+                <Button variant="outlined" onClick={handleCopyQuoteImage} disabled={!canUseQuote}>
                   Copiar imagen
                 </Button>
                 <Button
@@ -966,7 +1076,7 @@ export const DashboardPage: React.FC = () => {
                   type="number"
                   value={quoteCompra ?? ''}
                   onChange={(e) => {
-                    setQuoteCompra(e.target.value ? Number(e.target.value) : null);
+                    setQuoteCompra(parseQuoteInput(e.target.value));
                     setQuoteUpdatedAt(new Date());
                   }}
                   sx={{ width: 140 }}
@@ -978,7 +1088,7 @@ export const DashboardPage: React.FC = () => {
                   type="number"
                   value={quoteVenta ?? ''}
                   onChange={(e) => {
-                    setQuoteVenta(e.target.value ? Number(e.target.value) : null);
+                    setQuoteVenta(parseQuoteInput(e.target.value));
                     setQuoteUpdatedAt(new Date());
                   }}
                   sx={{ width: 140 }}
